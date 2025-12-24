@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 
 interface ReadOnlyEditorProps {
@@ -9,42 +9,41 @@ interface ReadOnlyEditorProps {
   maxHeight?: string
 }
 
+// Clean HTML content before rendering to prevent hydration mismatches
+// Uses regex to ensure consistent cleaning on both server and client
+function cleanHtmlContent(html: string): string {
+  let cleaned = html
+  
+  // Remove placeholder divs with dashed borders containing "Click to upload"
+  cleaned = cleaned.replace(/<div[^>]*style\s*=\s*["'][^"']*border\s*:\s*2px\s+dashed[^"']*["'][^>]*>[\s\S]*?Click\s+to\s+upload[\s\S]*?<\/div>/gi, '')
+  cleaned = cleaned.replace(/<div[^>]*style\s*=\s*["'][^"']*border\s*:\s*2px\s+dashed[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '')
+  
+  // Remove file input elements
+  cleaned = cleaned.replace(/<input[^>]*type\s*=\s*["']file["'][^>]*>[\s\S]*?<\/input>/gi, '')
+  cleaned = cleaned.replace(/<input[^>]*type\s*=\s*["']file["'][^>]*\/?>/gi, '')
+  
+  // Remove empty image row containers (more comprehensive regex)
+  cleaned = cleaned.replace(/<div[^>]*class\s*=\s*["'][^"']*image-row-container[^"']*["'][^>]*>\s*<\/div>/gi, '')
+  cleaned = cleaned.replace(/<div[^>]*class\s*=\s*["'][^"']*image-row-container[^"']*["'][^>]*>[\s]*<\/div>/gi, '')
+  
+  return cleaned
+}
+
 export function ReadOnlyEditor({
   content,
   className,
   maxHeight,
 }: ReadOnlyEditorProps) {
-  const contentRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (contentRef.current && content) {
-      // Clean up any placeholder elements that might have been saved
-      const placeholders = contentRef.current.querySelectorAll('div[style*="border: 2px dashed"], div[style*="border:2px dashed"]')
-      placeholders.forEach(placeholder => {
-        if (placeholder.textContent?.includes("Click to upload")) {
-          placeholder.remove()
-        }
-      })
-
-      // Remove any hidden file inputs
-      const fileInputs = contentRef.current.querySelectorAll('input[type="file"]')
-      fileInputs.forEach(input => input.remove())
-
-      // Hide empty image row containers
-      const imageContainers = contentRef.current.querySelectorAll('.image-row-container')
-      imageContainers.forEach(container => {
-        const images = container.querySelectorAll('img')
-        if (images.length === 0) {
-          container.remove()
-        }
-      })
-    }
+  // Clean content before rendering to ensure server and client match
+  const cleanedContent = useMemo(() => {
+    if (!content) return null
+    return cleanHtmlContent(content)
   }, [content])
 
-  if (!content) return null
+  if (!cleanedContent) return null
 
   return (
-    <>
+    <div suppressHydrationWarning>
       <style dangerouslySetInnerHTML={{
         __html: `
           .readonly-editor-content {
@@ -232,12 +231,12 @@ export function ReadOnlyEditor({
         `
       }} />
       <div
-        ref={contentRef}
         className={cn("readonly-editor-content", className, maxHeight && "overflow-auto")}
         {...(maxHeight ? { style: { maxHeight } } : {})}
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: cleanedContent }}
+        suppressHydrationWarning
       />
-    </>
+    </div>
   )
 }
 

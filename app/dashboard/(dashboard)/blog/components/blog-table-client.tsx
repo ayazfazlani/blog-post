@@ -97,6 +97,7 @@ export default function BlogTableClient({
             className="pl-10"
           />
         </div>
+        <Link href="/dashboard/blog/create" className="btn btn-primary">Create Post</Link>
       </div>
 
       <Table>

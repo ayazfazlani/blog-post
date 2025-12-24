@@ -88,7 +88,7 @@ export default async function BlogPage({
                       <User className="h-4 w-4 mr-2" />
                       {post.author?.name || "Anonymous"}
                     </div>
-                    <div className="flex items-center">
+                    <div className="flex items-center" suppressHydrationWarning>
                       <Calendar className="h-4 w-4 mr-2" />
                       {format(new Date(post.createdAt), "MMM d, yyyy")}
                     </div>
