@@ -23,23 +23,37 @@ async function DesktopNav({ categories }: { categories: { _id: string; name: str
   return (
     <NavigationMenu>
       <NavigationMenuList className="flex gap-6">
-        <NavigationMenuItem>
-          <Link href="/">
-            <NavigationMenuLink className="font-medium">Home</NavigationMenuLink>
-          </Link>
+      <NavigationMenuItem >
+          <NavigationMenuLink asChild >
+            <Link href="/" className="font-medium">
+              All Posts
+            </Link>
+          </NavigationMenuLink>
         </NavigationMenuItem>
+      {categories.map((category) => (
+        <NavigationMenuItem key={category._id}>
+          <NavigationMenuLink asChild key={category._id}>
+            <Link href={`/?category=${category._id}`} className="font-medium">
+              {category.name}
+            </Link>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        ))}
 
-        <NavigationMenuItem>
+        {/* <NavigationMenuItem>
           <NavigationMenuTrigger className="font-medium">Categories</NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
               {categories.map((category) => (
                 <li key={category._id}>
-                  <Link href={`/category/${category.slug}`} legacyBehavior passHref>
-                    <NavigationMenuLink className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+                  <NavigationMenuLink asChild>
+                    <Link 
+                      href={`/category/${category.slug}`}
+                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    >
                       <div className="text-sm font-medium leading-none">{category.name}</div>
-                    </NavigationMenuLink>
-                  </Link>
+                    </Link>
+                  </NavigationMenuLink>
                 </li>
               ))}
             </ul>
@@ -47,10 +61,12 @@ async function DesktopNav({ categories }: { categories: { _id: string; name: str
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <Link href="/about">
-            <NavigationMenuLink className="font-medium">About</NavigationMenuLink>
-          </Link>
-        </NavigationMenuItem>
+          <NavigationMenuLink asChild>
+            <Link href="/about" className="font-medium">
+              About
+            </Link>
+          </NavigationMenuLink>
+        </NavigationMenuItem> */}
       </NavigationMenuList>
     </NavigationMenu>
   );

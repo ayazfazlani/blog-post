@@ -20,14 +20,14 @@ export default async function BlogLayout({
       <div className="flex-1 container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar - Hidden on mobile, visible on lg+ */}
-          <aside className="hidden lg:block lg:col-span-1">
+          {/* <aside className="hidden lg:block lg:col-span-1">
             <Suspense fallback={<div>Loading categories...</div>}>
               <CategorySidebar categories={categories} />
             </Suspense>
-          </aside>
+          </aside> */}
 
           {/* Main Content */}
-          <main className="lg:col-span-3">
+          <main className="lg:col-span-4">
             {children}
           </main>
         </div>

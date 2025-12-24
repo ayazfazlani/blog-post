@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Calendar, User as UserIcon} from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { ReadOnlyEditor } from "@/components/read-only-editor";
+import { ReadOnlyEditor } from "@/components/ui/read-only-editor";
 
 // Force dynamic rendering to prevent prerendering during build
 export const dynamic = 'force-dynamic';

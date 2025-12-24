@@ -34,12 +34,12 @@ export default async function BlogPage({
   return (
     <div className="container mx-auto px-4 py-12">
       {/* Title */}
-      <div className="text-center mb-12">
+      {/* <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">Blog & Articles</h1>
         <p className="text-xl text-muted-foreground">
           Insights, tutorials, and news from our team
         </p>
-      </div>
+      </div> */}
 
       {/* Blog Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
