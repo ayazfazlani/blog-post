@@ -49,7 +49,7 @@ export default async function BlogPage({
             className="overflow-hidden hover:shadow-lg transition-shadow"
           >
             <CardContent className="p-0">
-              <Link href={`/blog/${post.slug}`} className="block">
+              <Link href={`/${post.slug}`} className="block">
                 {/* Optional: Show image if you have one in your DB */}
                 {post.featuredImage && (
                   <div>

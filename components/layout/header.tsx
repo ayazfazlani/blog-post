@@ -86,10 +86,15 @@ async function MobileNav({ categories }: { categories: { _id: string; name: stri
         <SheetTitle>Menu</SheetTitle>
         <SheetDescription className="sr-only">Main navigation</SheetDescription>
         <nav className="flex flex-col space-y-4 mt-8">
-          <Link href="/" className="text-lg font-medium">
-            Home
+        <Link href="/" className="text-lg font-medium">
+            All Posts
           </Link>
-          <div className="space-y-2">
+          {categories.map((category) => (
+            <Link key={category._id} href={`/?category=${category._id}`} className="text-lg font-medium">
+              {category.name}
+            </Link>
+          ))}
+          {/* <div className="space-y-2">
             <p className="text-lg font-medium">Categories</p>
             {categories.map((category) => (
               <Link
@@ -100,7 +105,7 @@ async function MobileNav({ categories }: { categories: { _id: string; name: stri
                 {category.name}
               </Link>
             ))}
-          </div>
+          </div> */}
           <Link href="/about" className="text-lg font-medium">
             About
           </Link>
