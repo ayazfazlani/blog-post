@@ -1,16 +1,16 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextConfig from "eslint-config-next";
-
-const eslintConfig = defineConfig([
-  ...(Array.isArray(nextConfig) ? nextConfig : [nextConfig]),
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
+/** @type {import('eslint').Linter.Config[]} */
+const eslintConfig = [
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "node_modules/**",
+      "next-env.d.ts",
+      "src/generated/**",
+      "*.config.{js,ts,mjs}",
+    ],
+  },
+];
 
 export default eslintConfig;
