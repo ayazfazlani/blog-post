@@ -18,6 +18,7 @@ import {
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
 import { getCategories } from '@/app/actions/client/category-actions';
+import { ModeToggle } from './darkmode';
 
 async function DesktopNav({ categories }: { categories: { _id: string; name: string; slug: string }[] }) {
   return (
@@ -68,6 +69,9 @@ async function DesktopNav({ categories }: { categories: { _id: string; name: str
             </Link>
           </NavigationMenuLink>
         </NavigationMenuItem> */}
+
+
+      <ModeToggle />
       </NavigationMenuList>
     </NavigationMenu>
   );
@@ -82,7 +86,7 @@ async function MobileNav({ categories }: { categories: { _id: string; name: stri
           <span className="sr-only">Open menu</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+      <SheetContent side="left" className="w-[300px] p-4 sm:w-[400px]">
         <SheetTitle>Menu</SheetTitle>
         <SheetDescription className="sr-only">Main navigation</SheetDescription>
         <nav className="flex flex-col space-y-4 mt-8">
@@ -110,6 +114,7 @@ async function MobileNav({ categories }: { categories: { _id: string; name: stri
             About
           </Link>
         </nav>
+        <ModeToggle />
       </SheetContent>
     </Sheet>
   );

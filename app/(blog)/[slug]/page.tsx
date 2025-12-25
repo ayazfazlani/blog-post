@@ -6,10 +6,10 @@ import { Calendar, User as UserIcon} from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { ReadOnlyEditor } from "@/components/ui/read-only-editor";
+import Image from "next/image";
 
-// Force dynamic rendering to prevent prerendering during build
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Revalidate every 60 seconds for fresh content
+export const revalidate = 60;
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   await connectToDatabase();
@@ -35,10 +35,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* Featured Image (if exists) */}
       {post.featuredImage && (
         <div className="mb-8 -mx-4 md:mx-0 rounded-lg overflow-hidden shadow-xl">
-          <img
+          <Image
             src={post.featuredImage}
             alt={post.title}
+            width={1200}
+            height={500}
             className="w-full h-[400px] md:h-[500px] object-cover"
+            sizes="(max-width: 768px) 100vw, 1200px"
+            priority
           />
         </div>
       )}

@@ -42,6 +42,7 @@ export async function getPublishedPosts(categoryId?: string | null) {
     
     try {
         const posts = await Post.find(query)
+            .select('title slug content excerpt featuredImage authorId categoryId createdAt updatedAt')
             .populate('authorId', 'name email')
             .populate('categoryId', 'name')
             .sort({ createdAt: -1 })
@@ -74,6 +75,7 @@ export async function getPublishedPosts(categoryId?: string | null) {
         if (error.message?.includes('Schema hasn\'t been registered')) {
             console.error('Model registration error, fetching without populate:', error);
             const posts = await Post.find(query)
+                .select('title slug content excerpt featuredImage authorId categoryId createdAt updatedAt')
                 .sort({ createdAt: -1 })
                 .lean();
             

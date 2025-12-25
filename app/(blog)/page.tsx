@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { getPublishedPosts } from "@/app/actions/client/blog-actions";
 import { ReadOnlyEditor } from "@/components/ui/read-only-editor";
+import Image from "next/image";
 
-// Force dynamic rendering to ensure searchParams are always fresh
-export const dynamic = 'force-dynamic';
+// Revalidate every 60 seconds for fresh content
+export const revalidate = 60;
 
 // Infer the type from the function return value
 type PostWithRelations = Awaited<ReturnType<typeof getPublishedPosts>>[0];
@@ -32,7 +33,7 @@ export default async function BlogPage({
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-12 dark:bg-dark-background">
       {/* Title */}
       {/* <div className="text-center mb-12">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">Blog & Articles</h1>
@@ -52,14 +53,18 @@ export default async function BlogPage({
               <Link href={`/${post.slug}`} className="block">
                 {/* Optional: Show image if you have one in your DB */}
                 {post.featuredImage && (
-                  <div>
-                  <img
-                    src={post.featuredImage}
-                    alt={post.title}
-                    className="w-full h-48 object-cover"
-                  />
+                  <div className="relative w-full h-48 overflow-hidden bg-muted">
+                    <Image
+                      src={post.featuredImage}
+                      alt={post.title}
+                      width={400}
+                      height={192}
+                      className="w-full h-full object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      loading="lazy"
+                    />
                   </div>
-                  )}
+                )}
 
                 <div className="p-6">
                   {/* Category Badge (if you have category field) */}
