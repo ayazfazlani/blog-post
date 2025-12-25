@@ -82,7 +82,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* Footer */}
       <footer className="mt-16 pt-8 border-t">
         <Link
-          href="/blog"
+          href="/"
           className="text-primary hover:underline inline-flex items-center gap-2 text-sm font-medium transition-colors"
         >
           <span>←</span>

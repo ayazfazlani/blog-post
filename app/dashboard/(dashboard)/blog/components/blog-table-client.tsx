@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, MoreHorizontal, Edit, Trash2, Eye, Calendar } from "lucide-react";
+import { Search, MoreHorizontal, Edit, Trash2, Eye, Calendar, Plus } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { deletePost } from "@/app/actions/dashboard/blog/blog-actions";
@@ -87,7 +87,7 @@ export default function BlogTableClient({
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -97,6 +97,12 @@ export default function BlogTableClient({
             className="pl-10"
           />
         </div>
+        <Button>
+          <Link href="/dashboard/blog/create" className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Post
+          </Link>
+        </Button>
       </div>
 
       <Table>

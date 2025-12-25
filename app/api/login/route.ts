@@ -4,6 +4,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
+import { getUserPermissions } from '@/lib/permissions';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -76,9 +77,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create JWT token (valid for 7 days)
+    // Get user permissions for JWT token
+    const permissions = await getUserPermissions(user._id.toString());
+
+    // Create JWT token (valid for 7 days) with permissions
     const token = sign(
-      { userId: user._id.toString(), email: user.email, name: user.name },
+      { 
+        userId: user._id.toString(), 
+        email: user.email, 
+        name: user.name,
+        permissions // Include permissions in token
+      },
       JWT_SECRET,
       { expiresIn: '7d' }
     );

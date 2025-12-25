@@ -4,7 +4,18 @@ import { connectToDatabase } from "@/lib/mongodb";
 import mongoose from "mongoose";
 import Post from "@/models/Post";
 
-export async function getPublishedPosts(categoryId?: string | null) {
+/**
+ * Get published posts with pagination support
+ * @param categoryId - Optional category filter
+ * @param limit - Number of posts to fetch (default: 6)
+ * @param skip - Number of posts to skip (default: 0)
+ * @returns Object with posts array and hasMore boolean
+ */
+export async function getPublishedPosts(
+    categoryId?: string | null,
+    limit: number = 6,
+    skip: number = 0
+) {
     await connectToDatabase();
     
     // Import models to ensure they're registered
@@ -41,14 +52,23 @@ export async function getPublishedPosts(categoryId?: string | null) {
     }
     
     try {
+        // Get total count for pagination
+        const totalCount = await Post.countDocuments(query);
+        
+        // Fetch posts with pagination
         const posts = await Post.find(query)
             .select('title slug content excerpt featuredImage authorId categoryId createdAt updatedAt')
             .populate('authorId', 'name email')
             .populate('categoryId', 'name')
             .sort({ createdAt: -1 })
+            .limit(limit)
+            .skip(skip)
             .lean();
         
-        return posts.map(post => ({
+        const hasMore = skip + posts.length < totalCount;
+        
+        return {
+            posts: posts.map(post => ({
             id: post._id.toString(),
             title: post.title,
             slug: post.slug,
@@ -69,14 +89,22 @@ export async function getPublishedPosts(categoryId?: string | null) {
             } : null,
             createdAt: post.createdAt,
             updatedAt: post.updatedAt,
-        }));
+            })),
+            hasMore,
+            total: totalCount,
+        };
     } catch (error: any) {
         // If populate fails, try without populate and manually fetch related data
         if (error.message?.includes('Schema hasn\'t been registered')) {
             console.error('Model registration error, fetching without populate:', error);
+            // Get total count
+            const totalCount = await Post.countDocuments(query);
+            
             const posts = await Post.find(query)
                 .select('title slug content excerpt featuredImage authorId categoryId createdAt updatedAt')
                 .sort({ createdAt: -1 })
+                .limit(limit)
+                .skip(skip)
                 .lean();
             
             // Manually populate author and category
@@ -132,8 +160,20 @@ export async function getPublishedPosts(categoryId?: string | null) {
                 })
             );
             
-            return postsWithRelations;
+            const hasMore = skip + postsWithRelations.length < totalCount;
+            
+            return {
+                posts: postsWithRelations,
+                hasMore,
+                total: totalCount,
+            };
         }
-        throw error;
+        
+        // If error occurs, return empty result
+        return {
+            posts: [],
+            hasMore: false,
+            total: 0,
+        };
     }
 }

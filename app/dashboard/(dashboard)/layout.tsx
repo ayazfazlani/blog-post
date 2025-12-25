@@ -1,10 +1,11 @@
 // app/dashboard/layout.tsx
 "use client";
 
-import { Home, Settings, Menu, Book , Box } from "lucide-react";
+import { Home, Settings, Menu, Book , Box, Shield, Key, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Link from "next/link";
+import { ModeToggle } from "@/components/layout/darkmode";
 
 export default function DashboardLayout({
   children,
@@ -15,6 +16,9 @@ export default function DashboardLayout({
     { href: "/dashboard", label: "Home", icon: Home },
     { href: "/dashboard/category", label: "Category", icon: Box },
     { href: "/dashboard/blog", label: "Blog", icon: Book },
+    { href: "/dashboard/users", label: "Users", icon: Users },
+    { href: "/dashboard/roles", label: "Roles", icon: Shield },
+    { href: "/dashboard/permissions", label: "Permissions", icon: Key },
     { href: "/dashboard/settings", label: "Settings", icon: Settings },
   ];
 
@@ -70,7 +74,10 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
 
-          <h2 className="text-lg font-semibold">Dashboard</h2>
+          <div className="flex items-center justify-between w-full">
+            <h2 className="text-lg font-semibold">Dashboard</h2>
+            <ModeToggle />
+          </div>
         </header>
 
         <main className="p-4 md:p-6">
