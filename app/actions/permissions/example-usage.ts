@@ -7,7 +7,7 @@
 'use server';
 
 import { getCurrentUserId } from '@/lib/auth';
-import { authorize, hasPermission } from '@/lib/permissions';
+import { authorize, hasPermission, hasAnyPermission, hasAllPermissions, hasRole } from '@/lib/permissions';
 import { connectToDatabase } from '@/lib/mongodb';
 import Post from '@/models/Post';
 
@@ -111,7 +111,6 @@ export async function publishPostExample(postId: string) {
   }
 
   // Only admins and editors can publish posts
-  const { hasRole } = await import('@/lib/permissions');
   const isAdmin = await hasRole(userId, 'admin');
   const isEditor = await hasRole(userId, 'editor');
 
