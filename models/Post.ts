@@ -14,5 +14,11 @@ const postSchema = new mongoose.Schema({
   excerpt: { type: String, default: null },
 }, { timestamps: true });
 
+// Add indexes for better query performance
+postSchema.index({ published: 1, createdAt: -1 }); // For published posts sorted by date
+postSchema.index({ published: 1, categoryId: 1, createdAt: -1 }); // For category-filtered published posts
+postSchema.index({ authorId: 1 });
+postSchema.index({ categoryId: 1 });
+
 export default mongoose.models.Post || mongoose.model('Post', postSchema);
 

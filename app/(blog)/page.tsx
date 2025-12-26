@@ -1,28 +1,57 @@
 // app/blog/page.tsx
-import { getPublishedPosts } from "@/app/actions/client/blog-actions";
 import BlogListClient from "./components/blog-list-client";
+import { getPublishedPosts } from "@/app/actions/client/blog-actions";
+import { Suspense } from "react";
 
-// Revalidate every 60 seconds for fresh content
-export const revalidate = 60;
+export const revalidate = 60; // ISR: revalidate every 60 seconds
+export const dynamic = 'force-dynamic'; // Allow dynamic rendering for search params
 
-export default async function BlogPage({
-  searchParams,
-}: { 
-  params: Promise<{ category?: string }>, 
-  searchParams: Promise<{ category?: string }> 
+type PostWithRelations = {
+  id: string;
+  title: string;
+  slug: string;
+  content: string | null;
+  excerpt: string | null;
+  featuredImage: string | null;
+  category: { id: string; name: string } | null;
+  author: { id: string; name: string; email: string } | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+async function BlogListServer({
+  categoryId,
+}: {
+  categoryId: string | undefined;
 }) {
-  // Fetch initial posts (first page)
-  const resolvedSearchParams = await searchParams;
-  const categoryId = resolvedSearchParams?.category || undefined;
-  
-  // Get first page of posts (6 posts)
   const result = await getPublishedPosts(categoryId, 6, 0);
 
+  const posts: PostWithRelations[] = (result.posts || []).map(post => ({
+    ...post,
+    createdAt: new Date(post.createdAt),
+    updatedAt: new Date(post.updatedAt),
+  }));
+
   return (
-    <BlogListClient 
-      initialPosts={result.posts || []}
+    <BlogListClient
+      initialPosts={posts}
       initialHasMore={result.hasMore || false}
       categoryId={categoryId}
     />
+  );
+}
+
+export default async function BlogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
+  const { category } = await searchParams;
+  const categoryId = category || undefined;
+
+  return (
+    <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+      <BlogListServer categoryId={categoryId} />
+    </Suspense>
   );
 }

@@ -6,12 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, User } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
+// Removed unused import
 import { ReadOnlyEditor } from "@/components/ui/read-only-editor";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { getPublishedPosts } from "@/app/actions/client/blog-actions";
+
 
 type PostWithRelations = {
   id: string;
@@ -56,7 +57,11 @@ export default function BlogListClient({
       startTransition(async () => {
         try {
           const result = await getPublishedPosts(urlCategoryId, 6, 0);
-          setPosts(result.posts || []);
+          setPosts(result.posts.map(post => ({
+            ...post,
+            createdAt: new Date(post.createdAt),
+            updatedAt: new Date(post.updatedAt),
+          })) || []);
           setHasMore(result.hasMore || false);
         } catch (error) {
           console.error('Error loading filtered posts:', error);
@@ -77,7 +82,11 @@ export default function BlogListClient({
         const result = await getPublishedPosts(currentCategoryId, 6, posts.length);
         
         if (result.posts) {
-          setPosts(prev => [...prev, ...result.posts]);
+          setPosts(prev => [...prev, ...result.posts.map(post => ({
+            ...post,
+            createdAt: new Date(post.createdAt),
+            updatedAt: new Date(post.updatedAt),
+          }))]);
           setHasMore(result.hasMore);
         }
       } catch (error) {
@@ -119,12 +128,11 @@ export default function BlogListClient({
               <Link href={`/${post.slug}`} className="block">
                 {/* Featured Image */}
                 {post.featuredImage && (
-                  <div className="relative w-full h-48 overflow-hidden bg-muted">
+                  <div className="relative w-full overflow-hidden bg-muted aspect-video">
                     <Image
                       src={post.featuredImage}
                       alt={post.title}
-                      width={400}
-                      height={192}
+                      fill
                       className="w-full h-full object-cover"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       loading="lazy"
@@ -146,12 +154,15 @@ export default function BlogListClient({
                   </h3>
 
                   {/* Excerpt */}
-                  {post.content && (
-                    <ReadOnlyEditor 
-                      content={post.content} 
-                      className="text-muted-foreground mb-4 line-clamp-3"
-                    />
-                  )}
+                  {post.excerpt ? (
+                    <p className="text-muted-foreground mb-4 line-clamp-3">
+                      {post.excerpt}
+                    </p>
+                  ) : post.content ? (
+                    <p className="text-muted-foreground mb-4 line-clamp-3">
+                      {post.content.replace(/<[^>]*>/g, '').substring(0, 150)}...
+                    </p>
+                  ) : null}
 
                   {/* Author & Date */}
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -161,7 +172,17 @@ export default function BlogListClient({
                     </div>
                     <div className="flex items-center">
                       <Calendar className="h-4 w-4 mr-2" />
-                      {format(new Date(post.createdAt), "MMM d, yyyy")}
+                      {post.createdAt && !isNaN(post.createdAt.getTime()) ? (
+                        <time className="text-sm" dateTime={post.createdAt.toISOString()}>
+                          {Intl.DateTimeFormat('en-US', { 
+                            month: 'long', 
+                            day: 'numeric', 
+                            year: 'numeric' 
+                          }).format(post.createdAt)}
+                        </time>
+                      ) : (
+                        <span className="text-sm">Date unavailable</span>
+                      )}
                     </div>
                   </div>
                 </div>

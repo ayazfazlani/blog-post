@@ -4,19 +4,31 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import Category from "@/models/Category";
 import Post from "@/models/Post";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { categorySchema } from "@/lib/validation";
 
 // READ: Get all categories
-export async function getCategories() {
+async function _getCategories() {
   await connectToDatabase();
-  const categories = await Category.find({}).sort({ name: 1 });
+  const categories = await Category.find({}).sort({ name: 1 }).lean();
   return categories.map(cat => ({
     id: cat._id.toString(),
     name: cat.name,
     createdAt: cat.createdAt,
     updatedAt: cat.updatedAt,
   }));
+}
+
+// Cache categories for better performance
+export async function getCategories() {
+  return unstable_cache(
+    _getCategories,
+    ['categories'],
+    {
+      revalidate: 300, // Cache for 5 minutes (categories don't change often)
+      tags: ['categories'],
+    }
+  )();
 }
 
 //get one category by id

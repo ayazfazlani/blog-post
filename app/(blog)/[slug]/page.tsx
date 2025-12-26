@@ -63,7 +63,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
             <time className="text-sm" dateTime={new Date(post.createdAt).toISOString()}>
-              {format(new Date(post.createdAt), "MMMM d, yyyy")}
+              {Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(post.createdAt)}
             </time>
           </div>
         </div>
