@@ -5,6 +5,7 @@ import { Calendar, User as UserIcon} from "lucide-react";
 import Link from "next/link";
 import { ReadOnlyEditor } from "@/components/ui/read-only-editor";
 import Image from "next/image";
+import { Suspense } from "react";
 
 // Revalidate every 60 seconds for fresh content
 export const revalidate = 60;
@@ -38,6 +39,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   return (
     <div className="container mx-auto px-4 py-8 md:py-12 max-w-4xl">
       {/* Featured Image (if exists) */}
+      <Suspense fallback={<div>Loading...</div>}>
       {post.featuredImage && (
         <div className="mb-8 -mx-4 md:mx-0 rounded-lg overflow-hidden shadow-xl">
           <Image
@@ -51,7 +53,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           />
         </div>
       )}
-
+      </Suspense>
       {/* Header Section */}
       <header className="mb-8">
         {/* Title */}

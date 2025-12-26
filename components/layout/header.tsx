@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/navigation-menu';
 import { getCategories } from '@/app/actions/client/category-actions';
 import { ModeToggle } from './darkmode';
+import { getSiteSettings } from '@/app/actions/dashboard/settings/site-settings-actions';
+import { SiteLogo } from '@/components/layout/site-logo';
 
 async function DesktopNav({ categories }: { categories: { _id: string; name: string; slug: string }[] }) {
   return (
@@ -123,12 +125,16 @@ async function MobileNav({ categories }: { categories: { _id: string; name: stri
 
 export async function Navbar() {
   // Use Suspense to prevent blocking the page render
+  const settings = await getSiteSettings();
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2 font-bold text-xl">
-          {/* Replace with your logo */}
-          <span>My Blog</span>
+          <SiteLogo 
+            logoUrl={settings.logoUrl}
+            logoPublicId={settings.logoPublicId}
+            siteName={settings.siteName}
+          />
         </Link>
 
         {/* Desktop Nav */}
