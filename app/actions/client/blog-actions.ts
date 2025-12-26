@@ -1,7 +1,6 @@
 "use server";
 
 import { connectToDatabase } from "@/lib/mongodb";
-import Post from "@/models/Post";
 import { unstable_cache } from "next/cache";
 
 // Helper function to safely convert date to ISO string
@@ -32,7 +31,16 @@ async function _getPublishedPosts(
     skip: number = 0
 ) {
     try {
+        // Connect to database first
         await connectToDatabase();
+        
+        // Import models AFTER connection (important for serverless environments)
+        // This ensures models are registered with the connected mongoose instance
+        const PostModule = await import("@/models/Post");
+        const UserModule = await import("@/models/User");
+        const CategoryModule = await import("@/models/Category");
+        
+        const Post = PostModule.default;
         
         // Build query conditionally
         const query: any = { published: true };

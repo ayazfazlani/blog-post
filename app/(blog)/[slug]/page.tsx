@@ -1,9 +1,7 @@
 // app/blog/[slug]/page.tsx
 import { connectToDatabase } from "@/lib/mongodb";
-import Post from "@/models/Post";
 import { notFound } from "next/navigation";
 import { Calendar, User as UserIcon} from "lucide-react";
-import { format } from "date-fns";
 import Link from "next/link";
 import { ReadOnlyEditor } from "@/components/ui/read-only-editor";
 import Image from "next/image";
@@ -12,7 +10,14 @@ import Image from "next/image";
 export const revalidate = 60;
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Connect to database first
   await connectToDatabase();
+  
+  // Import models AFTER connection (important for serverless environments)
+  const PostModule = await import("@/models/Post");
+  const UserModule = await import("@/models/User");
+  const Post = PostModule.default;
+  
   const resolvedParams = await params;
   const slug = resolvedParams.slug;
 
@@ -62,9 +67,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <time className="text-sm" dateTime={new Date(post.createdAt).toISOString()}>
-              {Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(post.createdAt)}
-            </time>
+            {post.createdAt && !isNaN(new Date(post.createdAt).getTime()) ? (
+              <time className="text-sm" dateTime={new Date(post.createdAt).toISOString()}>
+                {Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(new Date(post.createdAt))}
+              </time>
+            ) : (
+              <span className="text-sm">Date unavailable</span>
+            )}
           </div>
         </div>
       </header>

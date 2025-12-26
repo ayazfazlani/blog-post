@@ -1,5 +1,6 @@
 // components/layout/Navbar.tsx
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -121,10 +122,9 @@ async function MobileNav({ categories }: { categories: { _id: string; name: stri
 }
 
 export async function Navbar() {
-  const categories = await getCategories();
-
+  // Use Suspense to prevent blocking the page render
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2 font-bold text-xl">
           {/* Replace with your logo */}
@@ -133,14 +133,28 @@ export async function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex">
-          <DesktopNav categories={categories} />
+          <Suspense fallback={<div className="h-10 w-32" />}>
+            <NavbarContentDesktop />
+          </Suspense>
         </div>
 
         {/* Mobile Nav */}
         <div className="md:hidden">
-          <MobileNav categories={categories} />
+          <Suspense fallback={<div className="h-10 w-10" />}>
+            <NavbarContentMobile />
+          </Suspense>
         </div>
       </div>
     </header>
   );
+}
+
+async function NavbarContentDesktop() {
+  const categories = await getCategories();
+  return <DesktopNav categories={categories} />;
+}
+
+async function NavbarContentMobile() {
+  const categories = await getCategories();
+  return <MobileNav categories={categories} />;
 }

@@ -6,8 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, User } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-// Removed unused import
-import { ReadOnlyEditor } from "@/components/ui/read-only-editor";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";

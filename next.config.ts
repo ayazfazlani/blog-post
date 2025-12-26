@@ -24,6 +24,15 @@ const nextConfig: NextConfig = {
   },
   // Enable compression
   compress: true,
+  // Optimize bundle splitting
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react', 
+      '@/components/ui',
+      '@radix-ui/react-navigation-menu',
+      '@radix-ui/react-sheet',
+    ],
+  },
 };
 
 export default nextConfig;
