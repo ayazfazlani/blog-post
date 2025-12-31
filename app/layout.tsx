@@ -24,6 +24,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en' suppressHydrationWarning> 
+      <head>
+        <meta name="google-site-verification" content="hkN1ssOr7KiXpqpdBp6lixxkZgo-XqybxNLqUA_Snas" />
+      </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
