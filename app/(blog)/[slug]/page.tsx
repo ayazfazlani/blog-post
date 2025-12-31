@@ -9,6 +9,9 @@ import { Suspense } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import Post from "@/models/Post";
 import { unstable_cache } from "next/cache";
+import ContentWithRelatedPosts from "../components/content-with-related-posts";
+import { getRelatedPosts } from "@/app/actions/client/related-posts-actions";
+import { getSiteSettings } from "@/app/actions/client/site-settings-actions";
 
 // Revalidate every 5 minutes for fresh content (longer cache = faster)
 export const revalidate = 300;
@@ -50,8 +53,71 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     ? { name: post.authorId.name } 
     : null;
 
+  // Get category ID for related posts
+  const categoryId = post.categoryId 
+    ? (typeof post.categoryId === 'object' ? post.categoryId._id.toString() : post.categoryId.toString())
+    : null;
+
+  // Calculate content length to determine how many related posts to show
+  const contentLength = post.content ? post.content.replace(/<[^>]*>/g, '').length : 0;
+  
+  // Determine display logic:
+  // - Short content (< ~200 words / ~1000 chars): No related posts
+  // - Content >= ~200 words (~1000 chars): Show 3 posts at 33% AND 3 posts at 66% (two times)
+  // 200 words ≈ 1000-1200 characters (average 5-6 chars per word)
+  const wordCount = contentLength / 5; // Approximate word count (5 chars per word average)
+  const isShortContent = wordCount < 200;
+  const shouldShowRelatedPosts = wordCount >= 200; // Show for blogs with 200+ words
+
+  // Fetch enough posts to ensure we have different ones for each position
+  // Fetch 12 posts total (6 for 33%, 6 for 66%), each showing 3 posts
+  const allRelatedPosts = await getRelatedPosts(categoryId, slug, 12);
+
+  // Split posts for different positions
+  // First 6 posts for 33% position (will show 3), next 6 for 66% position (will show 3)
+  const relatedPosts33 = allRelatedPosts.slice(0, 6);
+  const relatedPosts66 = allRelatedPosts.slice(6, 12);
+
+  // Show 3 posts at each position
+  const postCount33 = shouldShowRelatedPosts ? 3 : 0; // 3 posts at 33%
+  const postCount66 = shouldShowRelatedPosts ? 3 : 0; // 3 posts at 66%
+
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "datePublished": post.createdAt,
+    "dateModified": post.updatedAt,
+    "author": {
+      "@type": "Person",
+      "name": author?.name || "Anonymous"
+    },
+    // "publisher": {
+    //   "@type": "Organization",
+    //   "name": siteSettings?.name || "Anonymous"
+    // },
+    "image": {
+      "@type": "ImageObject",
+      "url": post.featuredImage,
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://${(await getSiteSettings())?.domain}/${post.slug}`
+    },
+    "articleBody": post.content,
+    // "keywords": post.keywords,
+    "category": post.category,
+    // "tags": post.tags,
+    "url": `https://${(await getSiteSettings())?.domain}/${post.slug}`,
+    "wordCount": post.content.length,
+    "readingTime": post.content.length / 200,
+  }
+
   return (
-    <div className="container mx-auto px-4 py-40 md:py-12 max-w-4xl">
+    <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+    <div className="container mx-auto px-4 py-4 md:py-12 max-w-4xl">
       {/* Featured Image (if exists) */}
 
       {/* Header Section */}
@@ -98,12 +164,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       )}
       </Suspense>
 
-      {/* Main Content */}
-      <article className="blog-content">
+      {/* Main Content with Related Posts at 33% and 66% */}
+      <article>
         {post.content && (
-          <ReadOnlyEditor 
-            content={post.content} 
-            className="text-foreground"
+          <ContentWithRelatedPosts
+            content={post.content}
+            relatedPosts33={relatedPosts33}
+            relatedPosts66={relatedPosts66}
+            postCount33={postCount33}
+            postCount66={postCount66}
           />
         )}
       </article>
@@ -120,5 +189,6 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         </Link>
       </footer>
     </div>
+    </>
   );
 }

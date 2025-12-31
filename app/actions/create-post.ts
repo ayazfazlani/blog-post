@@ -25,6 +25,7 @@ export async function createPost(data: unknown) {
   });
 
   revalidatePath("/dashboard/blog");
+  revalidatePath("/blog");
   // redirect("/dashboard/blog");
 }
 
@@ -53,8 +54,8 @@ export async function updatePost(id: string, data: unknown) {
 export async function getPostById(id: string) {
   await connectToDatabase();
   const post = await Post.findById(id)
-    .populate('authorId', 'id name email')
-    .populate('categoryId', 'id name')
+    .populate("authorId", "id name email")
+    .populate("categoryId", "id name")
     .lean();
 
   if (!post) {
@@ -69,17 +70,31 @@ export async function getPostById(id: string) {
     content: post.content,
     published: post.published,
     featuredImage: post.featuredImage || null,
-    categoryId: post.categoryId ? (typeof post.categoryId === 'object' ? post.categoryId._id.toString() : post.categoryId.toString()) : null,
-    category: post.categoryId && typeof post.categoryId === 'object' ? {
-      id: post.categoryId._id.toString(),
-      name: post.categoryId.name,
-    } : null,
-    authorId: post.authorId ? (typeof post.authorId === 'object' ? post.authorId._id.toString() : post.authorId.toString()) : null,
-    author: post.authorId && typeof post.authorId === 'object' ? {
-      id: post.authorId._id.toString(),
-      name: post.authorId.name,
-      email: post.authorId.email,
-    } : null,
+    categoryId: post.categoryId
+      ? typeof post.categoryId === "object"
+        ? post.categoryId._id.toString()
+        : post.categoryId.toString()
+      : null,
+    category:
+      post.categoryId && typeof post.categoryId === "object"
+        ? {
+            id: post.categoryId._id.toString(),
+            name: post.categoryId.name,
+          }
+        : null,
+    authorId: post.authorId
+      ? typeof post.authorId === "object"
+        ? post.authorId._id.toString()
+        : post.authorId.toString()
+      : null,
+    author:
+      post.authorId && typeof post.authorId === "object"
+        ? {
+            id: post.authorId._id.toString(),
+            name: post.authorId.name,
+            email: post.authorId.email,
+          }
+        : null,
     createdAt: post.createdAt,
     updatedAt: post.updatedAt,
   };

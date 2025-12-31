@@ -1,12 +1,12 @@
 import mongoose, { Schema, model, models } from 'mongoose';
 
 const roleSchema = new Schema({
-  name: { type: String, required: true, unique: true }, // e.g., "admin", "user"
+  name: { type: String, required: true, unique: true }, // unique: true automatically creates an index
   permissions: [{ type: Schema.Types.ObjectId, ref: 'Permission' }],
 }, { timestamps: true });
 
 // Add indexes for better query performance
-roleSchema.index({ name: 1 });
+// Note: name already has index from unique: true
 roleSchema.index({ permissions: 1 });
 
 // Register model - use mongoose.models to check, models to get existing, model to create
