@@ -19,6 +19,20 @@ type PostWithRelations = {
   updatedAt: Date;
 };
 
+// Helper to safely convert ISO string to Date
+function safeDate(date: any): Date {
+  if (!date) return new Date();
+  if (date instanceof Date) {
+    return isNaN(date.getTime()) ? new Date() : date;
+  }
+  try {
+    const dateObj = new Date(date);
+    return isNaN(dateObj.getTime()) ? new Date() : dateObj;
+  } catch {
+    return new Date();
+  }
+}
+
 async function BlogListServer({
   categoryId,
 }: {
@@ -38,11 +52,14 @@ async function BlogListServer({
       );
     }
 
-    const posts: PostWithRelations[] = (result.posts || []).map(post => ({
-      ...post,
-      createdAt: new Date(post.createdAt),
-      updatedAt: new Date(post.updatedAt),
-    }));
+    // Safely convert dates and filter out any invalid posts
+    const posts: PostWithRelations[] = (result.posts || [])
+      .filter(post => post && post.id && post.title) // Filter invalid posts
+      .map(post => ({
+        ...post,
+        createdAt: safeDate(post.createdAt),
+        updatedAt: safeDate(post.updatedAt),
+      }));
 
     return (
       <BlogListClient
@@ -52,7 +69,11 @@ async function BlogListServer({
       />
     );
   } catch (error: any) {
-    console.error('❌ Error in BlogListServer:', error);
+    console.error('❌ Error in BlogListServer:', {
+      message: error?.message,
+      stack: error?.stack,
+      categoryId,
+    });
     // Return empty state instead of crashing
     return (
       <BlogListClient

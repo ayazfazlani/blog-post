@@ -7,12 +7,34 @@ import { unstable_cache } from "next/cache";
 function toISOString(date: any): string {
     if (!date) return new Date().toISOString();
     try {
-        const dateObj = date instanceof Date ? date : new Date(date);
+        // Handle Date objects
+        if (date instanceof Date) {
+            if (isNaN(date.getTime())) {
+                console.warn('Invalid Date object detected, using current date');
+                return new Date().toISOString();
+            }
+            return date.toISOString();
+        }
+        
+        // Handle string dates
+        if (typeof date === 'string') {
+            const dateObj = new Date(date);
+            if (isNaN(dateObj.getTime())) {
+                console.warn('Invalid date string detected:', date);
+                return new Date().toISOString();
+            }
+            return dateObj.toISOString();
+        }
+        
+        // Handle other types (number timestamps, etc.)
+        const dateObj = new Date(date);
         if (isNaN(dateObj.getTime())) {
+            console.warn('Invalid date value detected:', date, typeof date);
             return new Date().toISOString();
         }
         return dateObj.toISOString();
-    } catch {
+    } catch (error) {
+        console.error('Error converting date to ISO string:', error, date);
         return new Date().toISOString();
     }
 }
@@ -120,10 +142,20 @@ export async function getPublishedPosts(
                 return await unstable_cache(
                     async () => {
                         try {
-                            return await _getPublishedPosts(categoryId, limit, skip);
-                        } catch (error) {
-                            console.error('❌ Error in cached function:', error);
-                            throw error;
+                            const result = await _getPublishedPosts(categoryId, limit, skip);
+                            // Validate result before returning
+                            if (!result || !Array.isArray(result.posts)) {
+                                console.error('❌ Invalid result from _getPublishedPosts');
+                                return { posts: [], hasMore: false };
+                            }
+                            return result;
+                        } catch (error: any) {
+                            console.error('❌ Error in cached function:', {
+                                message: error?.message,
+                                stack: error?.stack,
+                            });
+                            // Return empty result instead of throwing to prevent crashes
+                            return { posts: [], hasMore: false };
                         }
                     },
                     [cacheKey],
