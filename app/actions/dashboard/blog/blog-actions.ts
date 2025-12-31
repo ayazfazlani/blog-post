@@ -64,3 +64,27 @@ export async function togglePublished(id: string, published: boolean) {
   revalidatePath("/dashboard/blog");
   revalidatePath("/blog");
 }
+
+export async function bulkUpdatePostDates(postIds: string[]) {
+  try {
+    await connectToDatabase();
+    const now = new Date();
+    
+    const result = await Post.updateMany(
+      { _id: { $in: postIds } },
+      { $set: { createdAt: now, updatedAt: now } }
+    );
+
+    revalidatePath("/dashboard/blog");
+    revalidatePath("/blog");
+    
+    return {
+      success: true,
+      updatedCount: result.modifiedCount,
+      message: `Updated ${result.modifiedCount} post(s) date to now`,
+    };
+  } catch (error: any) {
+    console.error('Error bulk updating post dates:', error);
+    throw new Error(`Failed to update post dates: ${error?.message || 'Unknown error'}`);
+  }
+}

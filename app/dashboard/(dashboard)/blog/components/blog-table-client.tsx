@@ -27,10 +27,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, MoreHorizontal, Edit, Trash2, Eye, Calendar, Plus } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, MoreHorizontal, Edit, Trash2, Eye, Calendar, Plus, Clock } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { deletePost } from "@/app/actions/dashboard/blog/blog-actions";
+import { deletePost, bulkUpdatePostDates } from "@/app/actions/dashboard/blog/blog-actions";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -51,6 +52,7 @@ export default function BlogTableClient({
 }) {
   const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
   const [search, setSearch] = useState("");
+  const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<BlogPost | null>(null);
@@ -79,11 +81,66 @@ export default function BlogTableClient({
       await deletePost(postToDelete.id);
       // Optimistically remove from UI
       setPosts(prev => prev.filter(p => p.id !== postToDelete.id));
+      setSelectedPosts(prev => {
+        const next = new Set(prev);
+        next.delete(postToDelete.id);
+        return next;
+      });
       toast.success("Post deleted successfully");
       setDeleteDialogOpen(false);
       setPostToDelete(null);
     });
   };
+
+  const handleSelectPost = (postId: string, checked: boolean) => {
+    setSelectedPosts(prev => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(postId);
+      } else {
+        next.delete(postId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedPosts(new Set(filteredPosts.map(p => p.id)));
+    } else {
+      setSelectedPosts(new Set());
+    }
+  };
+
+  const handleBulkUpdateDates = () => {
+    if (selectedPosts.size === 0) {
+      toast.error("Please select at least one post");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        const postIds = Array.from(selectedPosts);
+        const result = await bulkUpdatePostDates(postIds);
+        
+        // Update local state with new dates
+        const now = new Date();
+        setPosts(prev => prev.map(post => 
+          selectedPosts.has(post.id) 
+            ? { ...post, createdAt: now }
+            : post
+        ));
+        
+        setSelectedPosts(new Set());
+        toast.success(result.message);
+      } catch (error: any) {
+        toast.error(error.message || "Failed to update post dates");
+      }
+    });
+  };
+
+  const isAllSelected = filteredPosts.length > 0 && selectedPosts.size === filteredPosts.length;
+  const isIndeterminate = selectedPosts.size > 0 && selectedPosts.size < filteredPosts.length;
 
   return (
     <>
@@ -105,9 +162,33 @@ export default function BlogTableClient({
         </Button>
       </div>
 
+      {selectedPosts.size > 0 && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border bg-muted/50 p-4">
+          <div className="text-sm font-medium">
+            {selectedPosts.size} post{selectedPosts.size !== 1 ? 's' : ''} selected
+          </div>
+          <Button
+            onClick={handleBulkUpdateDates}
+            disabled={isPending}
+            variant="outline"
+            size="sm"
+          >
+            <Clock className="mr-2 h-4 w-4" />
+            {isPending ? "Updating..." : "Update Dates to Now"}
+          </Button>
+        </div>
+      )}
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-12">
+              <Checkbox
+                checked={isAllSelected}
+                onCheckedChange={handleSelectAll}
+                aria-label="Select all posts"
+              />
+            </TableHead>
             <TableHead>Title</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Status</TableHead>
@@ -118,13 +199,20 @@ export default function BlogTableClient({
         <TableBody>
           {filteredPosts.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                 {search ? "No posts found" : "No blog posts yet"}
               </TableCell>
             </TableRow>
           ) : (
             filteredPosts.map((post) => (
               <TableRow key={post.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedPosts.has(post.id)}
+                    onCheckedChange={(checked) => handleSelectPost(post.id, checked as boolean)}
+                    aria-label={`Select ${post.title}`}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
                   <Link href={`/dashboard/blog/${post.id}`} className="hover:underline">
                     {post.title}
