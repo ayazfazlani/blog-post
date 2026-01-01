@@ -1,7 +1,7 @@
 // app/dashboard/layout.tsx
 "use client";
 
-import { Home, Settings, Menu, Book , Box, Shield, Key, Users } from "lucide-react";
+import { Home, Settings, Menu, Book , Box, Shield, Key, Users, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Link from "next/link";
@@ -16,6 +16,7 @@ export default function DashboardLayout({
     { href: "/dashboard", label: "Home", icon: Home },
     { href: "/dashboard/category", label: "Category", icon: Box },
     { href: "/dashboard/blog", label: "Blog", icon: Book },
+    { href: "/dashboard/gallery", label: "Gallery", icon: ImageIcon },
     { href: "/dashboard/users", label: "Users", icon: Users },
     { href: "/dashboard/roles", label: "Roles", icon: Shield },
     { href: "/dashboard/permissions", label: "Permissions", icon: Key },

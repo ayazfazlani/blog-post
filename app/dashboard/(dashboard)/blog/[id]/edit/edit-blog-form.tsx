@@ -13,8 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import Link from "next/link";
-import { ArrowLeft, Upload } from "lucide-react";
-import { CldUploadButton } from 'next-cloudinary';
+import { ArrowLeft } from "lucide-react";
+import { GalleryImagePicker } from "@/components/gallery-image-picker";
 
 import {
   Form,
@@ -53,6 +53,7 @@ type Props = {
 export default function EditBlogForm({ post, users, categories }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
 
   // Manage editor content separately from form
   const [editorContent, setEditorContent] = useState<string>(post.content || "");
@@ -225,13 +226,6 @@ export default function EditBlogForm({ post, users, categories }: Props) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Featured Image</FormLabel>
-                      {!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && (
-                        <div className="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                          <p className="text-sm text-yellow-800">
-                            ⚠️ Cloudinary not configured. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME environment variable.
-                          </p>
-                        </div>
-                      )}
                       <div className="space-y-4">
                         {field.value && (
                           <div className="relative max-w-md">
@@ -252,42 +246,24 @@ export default function EditBlogForm({ post, users, categories }: Props) {
                           </div>
                         )}
 
-                        {!field.value && (
-                          <CldUploadButton 
-                            uploadPreset="blog_featured"
-                            options={{
-                              maxFiles: 1,
-                              singleUploadAutoClose: false,
-                            }}
-                            onSuccess={(result, { widget }) => {
-                              const url = (result as any)?.info?.secure_url;
-                              if (url) {
-                                field.onChange(url);
-                                toast.success("Featured image uploaded successfully!");
-                                widget.close();
-                              } else {
-                                toast.error("Upload succeeded but no URL returned.");
-                              }
-                            }}
-                            onError={(error: any) => {
-                              const errorMessage = error?.error?.message || error?.message || "Upload failed";
-                              if (errorMessage.includes("preset") || errorMessage.includes("401")) {
-                                toast.error(`Cloudinary error: ${errorMessage}. Check if preset exists and cloud name is correct.`);
-                              } else if (errorMessage.includes("network") || errorMessage.includes("fetch")) {
-                                toast.error("Network error. Please check your internet connection.");
-                              } else {
-                                toast.error(`Upload failed: ${errorMessage}`);
-                              }
-                            }}
-                            className="w-full"
-                          >
-                            <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                              <Upload className="w-12 h-12 text-gray-400 mb-4" />
-                              <p className="text-lg font-medium">Click to upload featured image</p>
-                              <p className="text-sm text-gray-500">or drag and drop (JPG, PNG)</p>
-                            </div>
-                          </CldUploadButton>
-                        )}
+                        <Button
+                          type="button"
+                          variant={field.value ? "outline" : "default"}
+                          onClick={() => setImagePickerOpen(true)}
+                          className="w-full"
+                        >
+                          {field.value ? "Change Image" : "Select Image from Gallery"}
+                        </Button>
+
+                        <GalleryImagePicker
+                          open={imagePickerOpen}
+                          onOpenChange={setImagePickerOpen}
+                          onSelect={(imagePath) => {
+                            field.onChange(imagePath);
+                            toast.success("Image selected successfully!");
+                          }}
+                          currentImage={field.value}
+                        />
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -350,12 +326,18 @@ export default function EditBlogForm({ post, users, categories }: Props) {
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
                         <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                          checked={field.value || false}
+                          onCheckedChange={(checked) => {
+                            field.onChange(checked === true);
+                          }}
+                          disabled={isPending}
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel>Publish immediately</FormLabel>
+                        <p className="text-sm text-muted-foreground">
+                          Check this to publish the post immediately
+                        </p>
                       </div>
                     </FormItem>
                   )}

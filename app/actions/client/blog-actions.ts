@@ -74,11 +74,12 @@ async function _getPublishedPosts(
         
         // Fetch one extra post to determine if there are more
         // Optimized query with only needed fields
+        // Sort by updatedAt first (latest updated), then createdAt (latest created) to ensure latest posts appear first
         const posts = await Post.find(query)
-            .select('title slug excerpt featuredImage authorId categoryId createdAt')
+            .select('title slug excerpt featuredImage authorId categoryId createdAt updatedAt')
             .populate('authorId', 'name')
             .populate('categoryId', 'name')
-            .sort({ createdAt: -1 })
+            .sort({ updatedAt: -1, createdAt: -1 }) // Sort by updatedAt first, then createdAt (both descending)
             .limit(limit + 1) // Fetch one extra to check if there are more
             .skip(skip)
             .lean();
@@ -108,7 +109,6 @@ async function _getPublishedPosts(
                     email: post.authorId.email,
                 } : null,
                 createdAt: toISOString(post.createdAt),
-                updatedAt: toISOString(post.updatedAt),
             })),
             hasMore,
         };

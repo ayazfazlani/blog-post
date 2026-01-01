@@ -4,7 +4,30 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import Post from "@/models/Post";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { postSchema } from "@/lib/validation";
 
+export async function createPost(data: any) {
+  await connectToDatabase();
+  const validated = postSchema.safeParse(data);
+  if (!validated.success) {
+    throw new Error(validated.error.issues[0].message);
+  }
+  await Post.create({
+    title: validated.data.title,
+    slug: validated.data.slug,
+    content: validated.data.content,
+    published: validated.data.published ?? false,
+    categoryId: validated.data.categoryId || null,
+    authorId: validated.data.authorId,
+    featuredImage: validated.data.featuredImage || null,
+  });
+  revalidatePath("/dashboard/blog");
+  revalidatePath("/blog");
+  return {
+    success: true,
+    message: "Post created successfully",
+  };
+}
 // Helper to safely serialize dates
 function serializeDate(date: any): Date {
   if (!date) return new Date();
@@ -70,30 +93,78 @@ export async function getAllPosts() {
 
 export async function deletePost(id: string) {
   await connectToDatabase();
+  const post = await Post.findById(id).lean();
+  const categoryId = post?.categoryId?.toString();
+  
   await Post.findByIdAndDelete(id);
+  
+  // Revalidate paths
   revalidatePath("/dashboard/blog");
   revalidatePath("/blog");
+  
+  // Revalidate cache tags to immediately update published posts
+  revalidateTag("posts");
+  revalidateTag("all-posts");
+  if (categoryId) {
+    revalidateTag(`category-${categoryId}`);
+  }
   // No redirect needed here – list stays on same page
 }
 
 export async function togglePublished(id: string, published: boolean) {
   await connectToDatabase();
-  await Post.findByIdAndUpdate(id, { published: !published });
+  const post = await Post.findById(id);
+  if (!post) {
+    throw new Error("Post not found");
+  }
+  
+  const categoryId = post.categoryId?.toString();
+  
+  // Update published status - this will trigger timestamps automatically
+  post.published = !published;
+  await post.save();
+  
+  // Revalidate paths
   revalidatePath("/dashboard/blog");
   revalidatePath("/blog");
+  
+  // Revalidate cache tags to immediately update published posts
+  revalidateTag("posts");
+  revalidateTag("all-posts");
+  if (categoryId) {
+    revalidateTag(`category-${categoryId}`);
+  }
 }
 
 export async function bulkUpdatePostDates(postIds: string[]) {
   try {
     await connectToDatabase();
+    const mongoose = await import('mongoose');
     const now = new Date();
     
     if (!postIds || postIds.length === 0) {
       throw new Error('No post IDs provided');
     }
 
-    const result = await Post.updateMany(
-      { _id: { $in: postIds } },
+    // Convert string IDs to ObjectIds
+    const objectIds = postIds.map(id => new mongoose.default.Types.ObjectId(id));
+
+    // Get categories of posts before update for cache invalidation
+    const updatedPosts = await Post.find({ _id: { $in: objectIds } })
+      .select("categoryId")
+      .lean();
+    
+    const categoryIds = new Set(
+      updatedPosts
+        .map(p => p.categoryId)
+        .filter(Boolean)
+        .map(cat => typeof cat === 'object' ? cat._id.toString() : cat.toString())
+    );
+
+    // Use updateMany with $set - this should work even with timestamps: true
+    // We need to bypass Mongoose's timestamp middleware for this specific operation
+    const result = await Post.collection.updateMany(
+      { _id: { $in: objectIds } },
       { $set: { createdAt: now, updatedAt: now } }
     );
 
@@ -106,19 +177,7 @@ export async function bulkUpdatePostDates(postIds: string[]) {
     revalidateTag("posts");
     revalidateTag("all-posts");
     
-    // Also invalidate category-specific tags if needed
-    // Get the categories of updated posts to invalidate their specific cache
-    const updatedPosts = await Post.find({ _id: { $in: postIds } })
-      .select("categoryId")
-      .lean();
-    
-    const categoryIds = new Set(
-      updatedPosts
-        .map(p => p.categoryId)
-        .filter(Boolean)
-        .map(cat => typeof cat === 'object' ? cat._id.toString() : cat.toString())
-    );
-    
+    // Invalidate category-specific tags
     for (const catId of categoryIds) {
       revalidateTag(`category-${catId}`);
     }

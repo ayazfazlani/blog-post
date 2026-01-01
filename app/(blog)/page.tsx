@@ -16,7 +16,6 @@ type PostWithRelations = {
   category: { id: string; name: string } | null;
   author: { id: string; name: string; email: string } | null;
   createdAt: Date;
-  updatedAt: Date;
 };
 
 // Helper to safely convert ISO string to Date
@@ -53,13 +52,26 @@ async function BlogListServer({
     }
 
     // Safely convert dates and filter out any invalid posts
+    // Sort by createdAt descending to ensure latest posts appear first
     const posts: PostWithRelations[] = (result.posts || [])
       .filter(post => post && post.id && post.title) // Filter invalid posts
-      .map(post => ({
-        ...post,
+      .map((post): PostWithRelations => ({
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        content: post.content || null,
+        excerpt: post.excerpt || null,
+        featuredImage: post.featuredImage || null,
+        category: post.category || null,
+        author: post.author || null,
         createdAt: safeDate(post.createdAt),
-        updatedAt: safeDate(post.updatedAt),
-      }));
+      }))
+      .sort((a, b) => {
+        // Sort by createdAt descending (newest first)
+        const dateA = a.createdAt.getTime();
+        const dateB = b.createdAt.getTime();
+        return dateB - dateA;
+      });
 
     return (
       <BlogListClient
