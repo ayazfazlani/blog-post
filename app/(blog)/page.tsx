@@ -2,9 +2,36 @@
 import BlogListClient from "./components/blog-list-client";
 import { getPublishedPosts } from "@/app/actions/client/blog-actions";
 import { Suspense } from "react";
+import type { Metadata } from "next";
+import { getCanonicalUrl } from "@/lib/canonical-url";
+import { getSiteSettings } from "@/app/actions/client/site-settings-actions";
 
 export const revalidate = 300; // ISR: revalidate every 5 minutes (longer cache = faster)
 export const dynamic = 'force-dynamic'; // Allow dynamic rendering for search params
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  // Route group (blog) resolves to / (home page), not /blog
+  const canonicalUrl = await getCanonicalUrl('/');
+  
+  const title = settings?.siteName 
+    ? `${settings.siteName} - Blog`
+    : 'Blog';
+  const description = settings?.siteDescription || 'Browse our latest blog posts and articles.';
+
+  return {
+    title: title.length > 70 ? title.substring(0, 70) : title,
+    description: description.length > 160 ? description.substring(0, 160) : description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: title,
+      description: description,
+      url: canonicalUrl,
+    },
+  };
+}
 
 type PostWithRelations = {
   id: string;

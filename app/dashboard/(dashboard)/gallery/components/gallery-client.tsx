@@ -4,7 +4,7 @@ import { useState, useTransition, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Calendar, Upload, Trash2, Loader2 } from "lucide-react";
+import { Calendar, Upload, Trash2, Loader2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ export default function GalleryClient({ initialImages }: GalleryClientProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [imageToDelete, setImageToDelete] = useState<GalleryImageData | null>(null);
+  const [copiedImageId, setCopiedImageId] = useState<string | null>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -117,6 +118,51 @@ export default function GalleryClient({ initialImages }: GalleryClientProps) {
     });
   };
 
+  const copyImageUrl = async (image: GalleryImageData) => {
+    try {
+      // Construct full URL
+      const baseUrl = window.location.origin;
+      const fullUrl = `${baseUrl}${image.path}`;
+      
+      // Try modern Clipboard API first, fallback to legacy method
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        // Modern Clipboard API (requires HTTPS or localhost)
+        await navigator.clipboard.writeText(fullUrl);
+      } else {
+        // Fallback to legacy method
+        const textArea = document.createElement('textarea');
+        textArea.value = fullUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand('copy');
+          if (!successful) {
+            throw new Error('Copy command failed');
+          }
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+      
+      // Show success feedback
+      setCopiedImageId(image.id);
+      toast.success("Image URL copied to clipboard!");
+      
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedImageId(null);
+      }, 2000);
+    } catch (error: any) {
+      console.error("Failed to copy URL:", error);
+      toast.error("Failed to copy URL to clipboard");
+    }
+  };
+
   if (images.length === 0 && !isUploading) {
     return (
       <div className="space-y-4">
@@ -187,8 +233,29 @@ export default function GalleryClient({ initialImages }: GalleryClientProps) {
                   />
                 </AspectRatio>
                 
-                {/* Delete Button Overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                {/* Action Buttons Overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyImageUrl(image);
+                    }}
+                  >
+                    {copiedImageId === image.id ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy URL
+                      </>
+                    )}
+                  </Button>
                   <Button
                     size="sm"
                     variant="destructive"

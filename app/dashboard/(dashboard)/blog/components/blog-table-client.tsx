@@ -144,17 +144,17 @@ export default function BlogTableClient({
 
   return (
     <>
-      <div className="mb-6 flex items-center justify-between">
-        <div className="relative max-w-md">
+      <div className="mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 w-full">
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search posts..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className="pl-10 w-full"
           />
         </div>
-        <Button>
+        <Button className="flex-shrink-0">
           <Link href="/dashboard/blog/create" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Create Post
@@ -163,7 +163,7 @@ export default function BlogTableClient({
       </div>
 
       {selectedPosts.size > 0 && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border bg-muted/50 p-4">
+        <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-lg border bg-muted/50 p-4">
           <div className="text-sm font-medium">
             {selectedPosts.size} post{selectedPosts.size !== 1 ? 's' : ''} selected
           </div>
@@ -172,6 +172,7 @@ export default function BlogTableClient({
             disabled={isPending}
             variant="outline"
             size="sm"
+            className="flex-shrink-0"
           >
             <Clock className="mr-2 h-4 w-4" />
             {isPending ? "Updating..." : "Update Dates to Now"}
@@ -179,32 +180,34 @@ export default function BlogTableClient({
         </div>
       )}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-12">
-              <Checkbox
-                checked={isAllSelected}
-                onCheckedChange={handleSelectAll}
-                aria-label="Select all posts"
-              />
-            </TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredPosts.length === 0 ? (
+      <div className="w-full overflow-x-auto">
+        <div className="inline-block min-w-full align-middle">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Select all"
+                  />
+                </TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPosts.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                 {search ? "No posts found" : "No blog posts yet"}
               </TableCell>
-            </TableRow>
-          ) : (
-            filteredPosts.map((post) => (
+              </TableRow>
+              ) : (
+                filteredPosts.map((post) => (
               <TableRow key={post.id}>
                 <TableCell>
                   <Checkbox
@@ -213,8 +216,8 @@ export default function BlogTableClient({
                     aria-label={`Select ${post.title}`}
                   />
                 </TableCell>
-                <TableCell className="font-medium">
-                  <Link href={`/dashboard/blog/${post.id}`} className="hover:underline">
+                <TableCell className="font-medium max-w-[200px]">
+                  <Link href={`/dashboard/blog/${post.id}`} className="hover:underline truncate block">
                     {post.title}
                   </Link>
                 </TableCell>
@@ -264,11 +267,13 @@ export default function BlogTableClient({
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+                </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>

@@ -9,9 +9,14 @@ import { Suspense } from "react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import Post from "@/models/Post";
 import { unstable_cache } from "next/cache";
-import ContentWithRelatedPosts from "../components/content-with-related-posts";
+import ContentWithRelatedPosts from "@/app/(blog)/components/content-with-related-posts";
 import { getRelatedPosts } from "@/app/actions/client/related-posts-actions";
 import { getSiteSettings } from "@/app/actions/client/site-settings-actions";
+import type { Metadata } from "next";
+import { getCanonicalUrl } from "@/lib/canonical-url";
+import { AdPlaceholder } from "@/components/ads/ad-placeholder";
+import { CommentsSection } from "@/components/comments/comments-section";
+import { getApprovedComments } from "@/app/actions/client/comment-actions";
 
 // Revalidate every 5 minutes for fresh content (longer cache = faster)
 export const revalidate = 300;
@@ -21,11 +26,42 @@ async function _getPostBySlug(slug: string) {
   await connectToDatabase();
   // Use compound index: { published: 1, slug: 1 } for fastest lookup
   const post = await Post.findOne({ published: true, slug })
-    .select('title slug content excerpt featuredImage authorId categoryId createdAt')
-    .populate('authorId', 'name')
+    .select('_id title slug content excerpt featuredImage authorId categoryId createdAt updatedAt')
+    .populate('authorId', 'name email')
     .populate('categoryId', 'name')
     .lean();
   return post;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await _getPostBySlug(slug);
+
+  if (!post) {
+    return {
+      title: 'Post Not Found',
+    };
+  }
+
+  const title = post.title;
+  const description = post.excerpt || '';
+  const canonicalUrl = await getCanonicalUrl(`/blog/${slug}`);
+
+  return {
+    title: title.length > 70 ? title.substring(0, 70) : title,
+    description: description.length > 160 ? description.substring(0, 160) : description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt || description,
+      ...(post.featuredImage && {
+        images: [post.featuredImage],
+      }),
+      url: canonicalUrl,
+    },
+  };
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -50,8 +86,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   }
 
   const author = post.authorId && typeof post.authorId === 'object' 
-    ? { name: post.authorId.name } 
-    : null;
+    ? { 
+        name: post.authorId.name || 'Anonymous',
+        email: post.authorId.email || null
+      } 
+    : { name: 'Anonymous', email: null };
 
   // Get category ID for related posts
   const categoryId = post.categoryId 
@@ -82,6 +121,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const postCount33 = shouldShowRelatedPosts ? 3 : 0; // 3 posts at 33%
   const postCount66 = shouldShowRelatedPosts ? 3 : 0; // 3 posts at 66%
 
+  const siteSettings = await getSiteSettings();
+
+  // Get approved comments for this post
+  const postId = post._id.toString();
+  const approvedComments = await getApprovedComments(postId);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -103,13 +147,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": `https://${(await getSiteSettings())?.domain}/${post.slug}`
+      "@id": `https://${siteSettings?.domain || 'example.com'}/blog/${post.slug}`
     },
     "articleBody": post.content,
     // "keywords": post.keywords,
     "category": post.category,
     // "tags": post.tags,
-    "url": `https://${(await getSiteSettings())?.domain}/${post.slug}`,
+    "url": `https://${siteSettings?.domain || 'example.com'}/blog/${post.slug}`,
     "wordCount": post.content.length,
     "readingTime": post.content.length / 200,
   }
@@ -117,7 +161,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   return (
     <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-    <div className="container mx-auto px-4 py-4 md:py-12 max-w-4xl">
+    <div className="container mx-auto px-4 py-2 md:py-12 max-w-4xl">
       {/* Featured Image (if exists) */}
 
       {/* Header Section */}
@@ -147,6 +191,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           </div>
         </div>
       </header>
+      
+      {/* Before Post Ad */}
+      <AdPlaceholder position="before-post" pageType="post" className="mb-6" />
+      
       <Suspense fallback={<div>Loading...</div>}>
       {post.featuredImage && (
         <div className="mb-8 -mx-4 md:mx-0 rounded-lg overflow-hidden shadow-xl">
@@ -177,6 +225,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         )}
       </article>
 
+      {/* After Post Ad */}
+      <AdPlaceholder position="after-post" pageType="post" className="mt-8 mb-6" />
+
+      {/* Comments Section */}
+      <CommentsSection postId={postId} initialComments={approvedComments} />
+
       {/* Footer */}
       <footer className="mt-16 pt-8 border-t">
         <Link
@@ -192,3 +246,4 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     </>
   );
 }
+

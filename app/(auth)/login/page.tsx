@@ -40,7 +40,26 @@ function SignInForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || (isLogin ? 'Login failed' : 'Registration failed'))
+        // Handle rate limiting (429 status)
+        if (res.status === 429) {
+          const errorMsg = data.error || 'Too many failed login attempts. Please try again later.';
+          if (data.blockedUntil) {
+            const blockedDate = new Date(data.blockedUntil);
+            const minutesRemaining = Math.ceil((blockedDate.getTime() - Date.now()) / (1000 * 60));
+            throw new Error(`${errorMsg} (Blocked for ${minutesRemaining} more minute(s))`);
+          }
+          throw new Error(errorMsg);
+        }
+        
+        // Handle other errors
+        let errorMessage = data.error || (isLogin ? 'Login failed' : 'Registration failed');
+        
+        // Add remaining attempts info if available
+        if (data.remainingAttempts !== undefined) {
+          errorMessage += ` (${data.remainingAttempts} attempt(s) remaining)`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       // Store token in localStorage (for client-side use if needed)

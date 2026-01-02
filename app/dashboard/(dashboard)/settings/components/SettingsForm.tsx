@@ -13,7 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Globe, Home, Search, Settings as SettingsIcon, Trash2, RefreshCw, ImageIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Globe, Home, Search, Settings as SettingsIcon, Trash2, RefreshCw, ImageIcon, Code, MessageSquare, Eye, ExternalLink } from "lucide-react";
 
 // Timezone options
 const timezones = [
@@ -37,6 +38,7 @@ export default function SettingsForm() {
   const [saving, setSaving] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
   const [fixingUrls, setFixingUrls] = useState(false);
+  const [viewingPreview, setViewingPreview] = useState(false);
 
   useEffect(() => {
     getSiteSettings().then((data) => {
@@ -52,6 +54,17 @@ export default function SettingsForm() {
         metaDescription: data.metaDescription || "",
         postsSchema: data.postsSchema || "",
         pagesSchema: data.pagesSchema || "",
+        siteTitle: data.siteTitle || "",
+        seoDescription: data.seoDescription || "",
+        keywords: data.keywords || "",
+        robotsIndex: data.robotsIndex !== undefined ? data.robotsIndex : true,
+        robotsFollow: data.robotsFollow !== undefined ? data.robotsFollow : true,
+        contentType: data.contentType || "UTF-8",
+        language: data.language || "English",
+        revisitDays: data.revisitDays || 1,
+        author: data.author || "",
+        customHeadScripts: data.customHeadScripts || "",
+        firebaseMessagingSW: data.firebaseMessagingSW || "",
       });
       setLoading(false);
     });
@@ -79,6 +92,11 @@ export default function SettingsForm() {
     e.preventDefault();
     setSaving(true);
 
+    // Debug: Check what's in settings.firebaseMessagingSW before submission
+    console.log('Before submit - firebaseMessagingSW value:', settings.firebaseMessagingSW);
+    console.log('Before submit - firebaseMessagingSW type:', typeof settings.firebaseMessagingSW);
+    console.log('Before submit - firebaseMessagingSW length:', settings.firebaseMessagingSW?.length || 0);
+
     const formData = new FormData();
     formData.append("siteName", settings.siteName || "");
     formData.append("siteDescription", settings.siteDescription || "");
@@ -90,14 +108,62 @@ export default function SettingsForm() {
     formData.append("metaDescription", settings.metaDescription || "");
     formData.append("postsSchema", settings.postsSchema || "");
     formData.append("pagesSchema", settings.pagesSchema || "");
+    formData.append("siteTitle", settings.siteTitle || "");
+    formData.append("seoDescription", settings.seoDescription || "");
+    formData.append("keywords", settings.keywords || "");
+    formData.append("robotsIndex", settings.robotsIndex ? "true" : "false");
+    formData.append("robotsFollow", settings.robotsFollow ? "true" : "false");
+    formData.append("contentType", settings.contentType || "UTF-8");
+    formData.append("language", settings.language || "English");
+    formData.append("revisitDays", (settings.revisitDays || 1).toString());
+    formData.append("author", settings.author || "");
+    formData.append("customHeadScripts", settings.customHeadScripts || "");
+    
+    // Get the value directly from the textarea element as a fallback
+    const textareaElement = document.getElementById("firebaseMessagingSW") as HTMLTextAreaElement;
+    const firebaseSWValue = textareaElement?.value || settings.firebaseMessagingSW || "";
+    console.log('Textarea element value length:', textareaElement?.value?.length || 0);
+    console.log('Final firebaseMessagingSW value to send:', firebaseSWValue.substring(0, 100));
+    
+    formData.append("firebaseMessagingSW", firebaseSWValue);
 
     try {
       const result = await updateSiteSettings(formData);
       if (result.success) {
-        setSettings(result.settings);
-        toast.success("Settings saved successfully!");
+        // Update state with the returned settings from server
+        const updatedSettings = {
+          siteName: result.settings.siteName || "My Blog",
+          siteDescription: result.settings.siteDescription || "",
+          logoUrl: result.settings.logoUrl || null,
+          logoPublicId: result.settings.logoPublicId || null,
+          faviconUrl: result.settings.faviconUrl || "",
+          timezone: result.settings.timezone || "Asia/Karachi",
+          metaTitle: result.settings.metaTitle || "",
+          metaDescription: result.settings.metaDescription || "",
+          postsSchema: result.settings.postsSchema || "",
+          pagesSchema: result.settings.pagesSchema || "",
+          siteTitle: result.settings.siteTitle || "",
+          seoDescription: result.settings.seoDescription || "",
+          keywords: result.settings.keywords || "",
+          robotsIndex: result.settings.robotsIndex !== undefined ? result.settings.robotsIndex : true,
+          robotsFollow: result.settings.robotsFollow !== undefined ? result.settings.robotsFollow : true,
+          contentType: result.settings.contentType || "UTF-8",
+          language: result.settings.language || "English",
+          revisitDays: result.settings.revisitDays || 1,
+          author: result.settings.author || "",
+          customHeadScripts: result.settings.customHeadScripts || "",
+          firebaseMessagingSW: result.settings.firebaseMessagingSW || "",
+        };
+        
+        // Debug: Log the saved Firebase service worker content
+        console.log('Saved Firebase SW content length:', result.settings.firebaseMessagingSW?.length || 0);
+        console.log('Saved Firebase SW content preview:', result.settings.firebaseMessagingSW?.substring(0, 100) || 'empty');
+        
+        setSettings(updatedSettings);
+        toast.success("Settings saved successfully! Firebase service worker updated.");
       }
     } catch (err: any) {
+      console.error('Error saving settings:', err);
       toast.error(err.message || "Failed to save settings");
     } finally {
       setSaving(false);
@@ -315,6 +381,279 @@ export default function SettingsForm() {
             <p className="text-sm text-muted-foreground">
               Recommended: 150-160 characters
             </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* SEO Settings Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            <CardTitle>SEO Settings</CardTitle>
+          </div>
+          <CardDescription>Configure search engine optimization settings</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="siteTitle">
+              Site Title <span className="text-muted-foreground">(Max 70 characters)</span>
+            </Label>
+            <Input
+              id="siteTitle"
+              value={settings.siteTitle || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 70) {
+                  setSettings({ ...settings, siteTitle: value });
+                }
+              }}
+              placeholder="Example Site Title"
+              maxLength={70}
+            />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>This title will be used in meta tags</span>
+              <span>{(settings.siteTitle || "").length}/70</span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="seoDescription">Site Description</Label>
+            <Textarea
+              id="seoDescription"
+              value={settings.seoDescription || ""}
+              onChange={(e) => setSettings({ ...settings, seoDescription: e.target.value })}
+              placeholder="This is example description"
+              rows={3}
+            />
+            <p className="text-sm text-muted-foreground">
+              A brief description of your website for search engines
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="keywords">Site Keywords (Separate with commas)</Label>
+            <Input
+              id="keywords"
+              value={settings.keywords || ""}
+              onChange={(e) => setSettings({ ...settings, keywords: e.target.value })}
+              placeholder="keyword1, keyword2, keyword3"
+            />
+            <p className="text-sm text-muted-foreground">
+              Enter keywords separated by commas (e.g., "1, 2, 3")
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              value={settings.author || ""}
+              onChange={(e) => setSettings({ ...settings, author: e.target.value })}
+              placeholder="khubaib"
+            />
+            <p className="text-sm text-muted-foreground">
+              The primary author of the website
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="robotsIndex"
+                checked={settings.robotsIndex !== undefined ? settings.robotsIndex : true}
+                onCheckedChange={(checked) => setSettings({ ...settings, robotsIndex: checked as boolean })}
+              />
+              <Label htmlFor="robotsIndex" className="cursor-pointer font-normal">
+                Allow robots to index your website?
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="robotsFollow"
+                checked={settings.robotsFollow !== undefined ? settings.robotsFollow : true}
+                onCheckedChange={(checked) => setSettings({ ...settings, robotsFollow: checked as boolean })}
+              />
+              <Label htmlFor="robotsFollow" className="cursor-pointer font-normal">
+                Allow robots to follow all links?
+              </Label>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="contentType">What type of content will your site display?</Label>
+            <Input
+              id="contentType"
+              value={settings.contentType || "UTF-8"}
+              onChange={(e) => setSettings({ ...settings, contentType: e.target.value })}
+              placeholder="UTF-8"
+            />
+            <p className="text-sm text-muted-foreground">
+              Character encoding (default: UTF-8)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="language">What is your site primary language?</Label>
+            <Input
+              id="language"
+              value={settings.language || "English"}
+              onChange={(e) => setSettings({ ...settings, language: e.target.value })}
+              placeholder="English"
+            />
+            <p className="text-sm text-muted-foreground">
+              Primary language of your website content
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="revisitDays">
+              Search engines should revisit this page after (days)
+            </Label>
+            <Input
+              id="revisitDays"
+              type="number"
+              min="1"
+              value={settings.revisitDays || 1}
+              onChange={(e) => setSettings({ ...settings, revisitDays: parseInt(e.target.value) || 1 })}
+              placeholder="1"
+            />
+            <p className="text-sm text-muted-foreground">
+              How often search engines should crawl your site (in days)
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Custom Head Scripts Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Code className="h-5 w-5" />
+            <CardTitle>Custom Head Scripts</CardTitle>
+          </div>
+          <CardDescription>Add custom scripts to the &lt;head&gt; section (e.g., Google Analytics, verification tags)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="customHeadScripts">Custom Scripts</Label>
+            <Textarea
+              id="customHeadScripts"
+              value={settings.customHeadScripts || ""}
+              onChange={(e) => setSettings({ ...settings, customHeadScripts: e.target.value })}
+              placeholder='<meta name="google-site-verification" content="..." />'
+              rows={6}
+              className="font-mono text-sm"
+            />
+            <p className="text-sm text-muted-foreground">
+              Add any custom HTML/scripts that should appear in the &lt;head&gt; section. Include full HTML tags.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Firebase Service Worker Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            <CardTitle>Firebase Messaging Service Worker</CardTitle>
+          </div>
+          <CardDescription>Configure Firebase Cloud Messaging service worker (firebase-messaging-sw.js)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="space-y-1">
+              <Label htmlFor="firebaseMessagingSW">Service Worker Content</Label>
+              <p className="text-xs text-muted-foreground">
+                {settings.firebaseMessagingSW 
+                  ? `Currently saved: ${settings.firebaseMessagingSW.length} characters`
+                  : "No content saved yet (using default)"}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setViewingPreview(!viewingPreview)}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {viewingPreview ? "Hide Preview" : "Show Preview"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('/firebase-messaging-sw.js', '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Live
+              </Button>
+            </div>
+          </div>
+
+          {viewingPreview && (
+            <div className="space-y-2 p-4 bg-muted rounded-lg border">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold">Current Saved Content Preview</Label>
+                <span className="text-xs text-muted-foreground">
+                  {settings.firebaseMessagingSW?.length || 0} characters
+                </span>
+              </div>
+              <pre className="text-xs font-mono bg-background p-3 rounded border overflow-auto max-h-64">
+                <code>{settings.firebaseMessagingSW || "// No content saved - default will be used"}</code>
+              </pre>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Textarea
+              id="firebaseMessagingSW"
+              value={settings.firebaseMessagingSW ?? ""}
+              onChange={(e) => {
+                setSettings({ ...settings, firebaseMessagingSW: e.target.value });
+              }}
+              placeholder={`// Firebase Cloud Messaging Service Worker
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+// Initialize Firebase
+firebase.initializeApp({
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+});
+
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  
+  const notificationTitle = payload.notification?.title || 'New Message';
+  const notificationOptions = {
+    body: payload.notification?.body || '',
+    icon: payload.notification?.icon || '/icon-192x192.png'
+  };
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
+});`}
+              rows={20}
+              className="font-mono text-sm"
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                This content will be served at <code className="px-1 py-0.5 bg-muted rounded">/firebase-messaging-sw.js</code>. 
+                Make sure to include your Firebase configuration.
+              </p>
+              <span className="text-xs text-muted-foreground">
+                {(settings.firebaseMessagingSW || "").length} characters
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>

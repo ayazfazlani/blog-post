@@ -10,6 +10,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { getPublishedPosts } from "@/app/actions/client/blog-actions";
+import { AdPlaceholder } from "@/components/ads/ad-placeholder";
 
 
 type PostWithRelations = {
@@ -160,12 +161,14 @@ export default function BlogListClient({
   }, [posts, hasMore, lastCategoryId, isHydrated]);
 
   // Reset posts when category filter changes in URL
+  // If categoryId prop is provided (e.g., on category pages), use that instead of searchParams
   useEffect(() => {
-    const urlCategoryId = searchParams.get('category') || undefined;
+    // Prioritize prop categoryId over searchParams (for category pages)
+    const effectiveCategoryId = categoryId !== undefined ? categoryId : (searchParams.get('category') || undefined);
     
     // Only fetch if category actually changed (not on initial mount)
-    if (urlCategoryId !== lastCategoryId) {
-      setLastCategoryId(urlCategoryId);
+    if (effectiveCategoryId !== lastCategoryId) {
+      setLastCategoryId(effectiveCategoryId);
       setIsLoading(true);
       
       // Clear old category's storage
@@ -175,7 +178,7 @@ export default function BlogListClient({
       
       // Try to restore from storage for new category
       if (typeof window !== 'undefined') {
-        const storageKey = getStorageKey(urlCategoryId);
+        const storageKey = getStorageKey(effectiveCategoryId);
         const stored = sessionStorage.getItem(storageKey);
         
         if (stored) {
@@ -195,7 +198,7 @@ export default function BlogListClient({
       
       startTransition(async () => {
         try {
-          const result = await getPublishedPosts(urlCategoryId, 6, 0);
+          const result = await getPublishedPosts(effectiveCategoryId, 6, 0);
           const newPosts = result.posts.map(post => ({
             ...post,
             createdAt: new Date(post.createdAt),
@@ -212,13 +215,13 @@ export default function BlogListClient({
         }
       });
     }
-  }, [searchParams, lastCategoryId]);
+  }, [searchParams, lastCategoryId, categoryId]);
 
   const loadMore = () => {
     startTransition(async () => {
       try {
-        // Get current category from URL
-        const currentCategoryId = searchParams.get('category') || undefined;
+        // Prioritize prop categoryId over searchParams (for category pages)
+        const currentCategoryId = categoryId !== undefined ? categoryId : (searchParams.get('category') || undefined);
         const result = await getPublishedPosts(currentCategoryId, 6, posts.length);
         
         if (result.posts) {
@@ -267,13 +270,13 @@ export default function BlogListClient({
     <div className="container mx-auto px-4 py-2 dark:bg-dark-background">
       {/* Blog Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <Card
             key={post.id}
             className="overflow-hidden hover:shadow-lg transition-shadow"
           >
             <CardContent className="p-0">
-              <Link href={`/${post.slug}`} prefetch={true} className="block">
+              <Link href={`/blog/${post.slug}`} prefetch={true} className="block">
                 {/* Featured Image */}
                 {post.featuredImage && (
                   <div className="relative w-full overflow-hidden bg-muted aspect-video">
@@ -341,6 +344,17 @@ export default function BlogListClient({
           </Card>
         ))}
       </div>
+      
+      {/* Between Posts Ad - Show after grid if there are posts */}
+      {posts.length > 0 && (
+        <div className="mt-8">
+          <AdPlaceholder 
+            position="between-posts" 
+            pageType="blog" 
+            className="w-full"
+          />
+        </div>
+      )}
 
       {/* Load More Button */}
       {hasMore && (

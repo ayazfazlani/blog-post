@@ -224,6 +224,52 @@ export function ReadOnlyEditor({
             border: none !important;
             border-top: 2px solid hsl(var(--border)) !important;
           }
+          /* HTML elements support */
+          .readonly-editor-content div {
+            margin: 1em 0 !important;
+          }
+          .readonly-editor-content span {
+            display: inline !important;
+          }
+          .readonly-editor-content iframe {
+            max-width: 100% !important;
+            border: none !important;
+            border-radius: 0.5rem !important;
+            margin: 2rem 0 !important;
+          }
+          .readonly-editor-content video {
+            max-width: 100% !important;
+            height: auto !important;
+            border-radius: 0.5rem !important;
+            margin: 2rem 0 !important;
+          }
+          .readonly-editor-content audio {
+            width: 100% !important;
+            margin: 2rem 0 !important;
+          }
+          .readonly-editor-content figure {
+            margin: 2rem 0 !important;
+            text-align: center !important;
+          }
+          .readonly-editor-content figcaption {
+            margin-top: 0.5rem !important;
+            font-size: 0.875rem !important;
+            color: hsl(var(--muted-foreground)) !important;
+            font-style: italic !important;
+          }
+          .readonly-editor-content section {
+            margin: 2rem 0 !important;
+          }
+          .readonly-editor-content article {
+            margin: 2rem 0 !important;
+          }
+          .readonly-editor-content aside {
+            margin: 2rem 0 !important;
+            padding: 1.5rem !important;
+            background-color: hsl(var(--muted) / 0.3) !important;
+            border-left: 4px solid hsl(var(--primary)) !important;
+            border-radius: 0.5rem !important;
+          }
           /* Hide any placeholder elements */
           .readonly-editor-content div[style*="border: 2px dashed"],
           .readonly-editor-content div[style*="border:2px dashed"] {

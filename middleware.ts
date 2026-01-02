@@ -7,11 +7,15 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for API routes and static files
+  // Skip middleware for API routes, static files, service workers, and sitemaps
   if (
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
-    pathname.startsWith('/favicon.ico')
+    pathname.startsWith('/favicon.ico') ||
+    pathname.includes('firebase-messaging-sw.js') ||
+    pathname.includes('service-worker') ||
+    pathname.startsWith('/sitemap') ||
+    pathname === '/robots.txt'
   ) {
     return NextResponse.next();
   }

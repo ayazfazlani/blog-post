@@ -5,6 +5,7 @@ import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 import { sign } from 'jsonwebtoken';
 import { getUserPermissions } from '@/lib/permissions';
+import { checkRateLimit, recordFailedAttempt, resetFailedAttempts, getClientIP } from '@/lib/rate-limit';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -37,6 +38,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get client IP address
+    const clientIP = getClientIP(request);
+
+    // Check rate limit before processing login
+    const rateLimitCheck = await checkRateLimit(clientIP, email);
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json(
+        { 
+          error: rateLimitCheck.message || 'Too many failed login attempts. Please try again later.',
+          blockedUntil: rateLimitCheck.blockedUntil?.toISOString(),
+        },
+        { status: 429 } // Too Many Requests
+      );
+    }
+
     // Connect to database with error handling
     try {
       await connectToDatabase();
@@ -55,15 +71,25 @@ export async function POST(request: Request) {
     const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
+      // Record failed attempt
+      await recordFailedAttempt(clientIP, normalizedEmail);
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { 
+          error: 'Invalid email or password',
+          remainingAttempts: rateLimitCheck.remainingAttempts ? rateLimitCheck.remainingAttempts - 1 : undefined,
+        },
         { status: 401 }
       );
     }
 
     if (!user.password) {
+      // Record failed attempt
+      await recordFailedAttempt(clientIP, normalizedEmail);
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { 
+          error: 'Invalid email or password',
+          remainingAttempts: rateLimitCheck.remainingAttempts ? rateLimitCheck.remainingAttempts - 1 : undefined,
+        },
         { status: 401 }
       );
     }
@@ -71,11 +97,19 @@ export async function POST(request: Request) {
     // Compare password using bcryptjs
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
+      // Record failed attempt
+      await recordFailedAttempt(clientIP, normalizedEmail);
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { 
+          error: 'Invalid email or password',
+          remainingAttempts: rateLimitCheck.remainingAttempts ? rateLimitCheck.remainingAttempts - 1 : undefined,
+        },
         { status: 401 }
       );
     }
+
+    // Login successful - reset failed attempts
+    await resetFailedAttempts(clientIP);
 
     // Get user permissions for JWT token
     const permissions = await getUserPermissions(user._id.toString());

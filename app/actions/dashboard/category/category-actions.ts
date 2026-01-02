@@ -10,10 +10,12 @@ import { categorySchema } from "@/lib/validation";
 // READ: Get all categories
 async function _getCategories() {
   await connectToDatabase();
-  const categories = await Category.find({}).sort({ name: 1 }).lean();
+  const categories = await Category.find({}).select('_id name slug').sort({ name: 1 }).lean();
   return categories.map(cat => ({
     id: cat._id.toString(),
+    _id: cat._id.toString(),
     name: cat.name,
+    slug: (cat as any).slug || generateSlug(cat.name), // Generate slug if missing
     createdAt: cat.createdAt,
     updatedAt: cat.updatedAt,
   }));
@@ -39,7 +41,7 @@ export async function getCategoryById(id: string) {
   
   // Fetch category and post count in parallel for better performance
   const [category, postsCount] = await Promise.all([
-    Category.findById(id).select('_id name').lean(),
+    Category.findById(id).select('_id name slug description').lean(),
     Post.countDocuments({ categoryId: id }),
   ]);
   
@@ -55,6 +57,8 @@ export async function getCategoryById(id: string) {
   return {
     id: category._id.toString(),
     name: category.name,
+    slug: (category as any).slug || generateSlug(category.name),
+    description: (category as any).description || '',
     posts: posts.map(p => ({
       id: p._id.toString(),
       title: p.title,
@@ -64,18 +68,44 @@ export async function getCategoryById(id: string) {
   };
 }
 
+// Helper function to generate slug from name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special characters
+    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+}
+
 // CREATE
 export async function createCategory(data: unknown) {
   await connectToDatabase();
   const validated = categorySchema.parse(data); // Secure validation
 
-  console.log("Creating category:", validated.name);  
+  // Generate slug from name
+  let slug = generateSlug(validated.name);
+  
+  // Ensure slug is unique
+  let counter = 1;
+  let uniqueSlug = slug;
+  while (await Category.findOne({ slug: uniqueSlug })) {
+    uniqueSlug = `${slug}-${counter}`;
+    counter++;
+  }
+
+  console.log("Creating category:", validated.name, "with slug:", uniqueSlug);  
   try {
-    const result = await Category.create({ name: validated.name });
+    const result = await Category.create({ 
+      name: validated.name,
+      slug: uniqueSlug,
+    });
     console.log("Category created:", result);
     // Invalidate both path and cache tag
     revalidatePath("/dashboard/category");
+    revalidatePath("/category");
     revalidateTag("categories");
+    revalidateTag("sitemap");
     return { success: true, category: result };
   } catch (error) {
     console.error("Error creating category:", error);
@@ -94,10 +124,25 @@ export async function updateCategory(id: string, data: unknown) {
   });
   if (existing) throw new Error("Another category with this name exists");
 
-  await Category.findByIdAndUpdate(id, { name: validated.name });
+  // Generate slug from name
+  let slug = generateSlug(validated.name);
+  
+  // Ensure slug is unique (excluding current category)
+  let counter = 1;
+  let uniqueSlug = slug;
+  while (await Category.findOne({ slug: uniqueSlug, _id: { $ne: id } })) {
+    uniqueSlug = `${slug}-${counter}`;
+    counter++;
+  }
+
+  await Category.findByIdAndUpdate(id, { 
+    name: validated.name,
+    slug: uniqueSlug,
+  });
 
   // Invalidate both path and cache tag
   revalidatePath("/dashboard/category");
+  revalidatePath("/category");
   revalidateTag("categories");
 }
 
@@ -112,5 +157,7 @@ export async function deleteCategory(id: string) {
 
   // Invalidate both path and cache tag
   revalidatePath("/dashboard/category");
+  revalidatePath("/category");
   revalidateTag("categories");
+  revalidateTag("sitemap");
 }

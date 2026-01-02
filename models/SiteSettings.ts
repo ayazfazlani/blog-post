@@ -12,6 +12,18 @@ const siteSettingsSchema = new mongoose.Schema({
     metaDescription: { type: String, default: "" },
     postsSchema: { type: String, default: '{"@context": "https://schema.org", "@type": "Article", "headline": "{title}", "description": "{description}", "image": "{image}", "datePublished": "{date}", "author": {"@type": "Person", "name": "Author"}}' },
     pagesSchema: { type: String, default: '{"@context": "https://schema.org", "@type": "WebPage", "name": "{title}", "description": "{description}", "url": "{url}"}' },
+    // SEO Settings
+    siteTitle: { type: String, default: "", maxlength: 70 }, // Max 70 characters
+    seoDescription: { type: String, default: "" },
+    keywords: { type: String, default: "" }, // Comma-separated keywords
+    robotsIndex: { type: Boolean, default: true }, // Allow robots to index
+    robotsFollow: { type: Boolean, default: true }, // Allow robots to follow links
+    contentType: { type: String, default: "UTF-8" }, // Content type/encoding
+    language: { type: String, default: "English" }, // Primary language
+    revisitDays: { type: Number, default: 1 }, // Search engines revisit interval in days
+    author: { type: String, default: "" }, // Site author
+    customHeadScripts: { type: String, default: "" }, // Custom scripts to add to head
+    firebaseMessagingSW: { type: String, default: "" }, // Firebase messaging service worker content
     updatedAt: { type: Date, default: Date.now },
   });
 

@@ -42,7 +42,7 @@ export default function RelatedPosts({ posts }: RelatedPostsProps) {
             key={post.id}
             className="overflow-hidden hover:shadow-lg transition-all duration-300 group"
           >
-            <Link href={`/${post.slug}`} prefetch={true} className="block">
+            <Link href={`/blog/${post.slug}`} prefetch={true} className="block">
               <CardContent className="p-0">
                 {/* Featured Image */}
                 {post.featuredImage ? (
