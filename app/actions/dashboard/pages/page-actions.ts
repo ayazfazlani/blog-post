@@ -2,13 +2,7 @@
 
 import { connectToDatabase } from "@/lib/mongodb";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { v2 as cloudinary } from "cloudinary";
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { getStorageProvider } from "@/lib/storage";
 
 // Get all pages
 export async function getPages() {
@@ -223,15 +217,13 @@ export async function deletePage(id: string) {
       throw new Error('Page not found');
     }
     
-    // Delete featured image from Cloudinary if exists
+    // Delete featured image from storage if exists
     if (page.featuredImage) {
       try {
-        const publicId = page.featuredImage.split('/').pop()?.split('.')[0];
-        if (publicId) {
-          await cloudinary.uploader.destroy(publicId);
-        }
-      } catch (cloudinaryError) {
-        console.error('Error deleting image from Cloudinary:', cloudinaryError);
+        const storage = getStorageProvider();
+        await storage.delete(page.featuredImage);
+      } catch (storageError) {
+        console.error('Error deleting image from storage:', storageError);
         // Continue with page deletion even if image deletion fails
       }
     }

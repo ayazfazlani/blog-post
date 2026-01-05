@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
 import { connectToDatabase } from '@/lib/mongodb';
 import GalleryImage from '@/models/GalleryImage';
 import { revalidatePath } from 'next/cache';
+import { getStorageProvider } from '@/lib/storage';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,30 +33,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
+    // Get storage provider
+    const storage = getStorageProvider();
+
+    // Convert file to buffer
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
 
     // Generate unique filename
     const timestamp = Date.now();
     const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `${timestamp}-${originalName}`;
-    const filepath = path.join(uploadsDir, filename);
 
-    // Save file to disk
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    // Upload to storage
+    const uploadResult = await storage.upload(
+      buffer,
+      filename,
+      file.type,
+      {
+        folder: 'gallery',
+      }
+    );
 
     // Save image metadata to database
     await connectToDatabase();
     const image = await GalleryImage.create({
-      filename,
+      filename: uploadResult.publicId || filename,
       originalName: file.name,
-      path: `/uploads/${filename}`,
-      size: file.size,
+      path: uploadResult.url,
+      size: uploadResult.bytes || file.size,
       mimeType: file.type,
     });
 

@@ -7,23 +7,15 @@ import { Upload } from "lucide-react";
 interface UploadButtonProps {
   onUploadSuccess: (url: string) => void;
   onUploadError: (error: Error) => void;
+  folder?: string;
 }
 
-export function UploadButton({ onUploadSuccess, onUploadError }: UploadButtonProps) {
+export function UploadButton({ onUploadSuccess, onUploadError, folder = "blog" }: UploadButtonProps) {
   const [uploading, setUploading] = useState(false);
-  
-  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "blog_featured";
   
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Validate Cloudinary configuration
-    if (!cloudName) {
-      onUploadError(new Error("Cloudinary cloud name is not configured. Please set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME environment variable."));
-      return;
-    }
 
     // Validate file type/size
     if (!file.type.startsWith("image/")) {
@@ -40,38 +32,27 @@ export function UploadButton({ onUploadSuccess, onUploadError }: UploadButtonPro
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", uploadPreset);
+    if (folder) {
+      formData.append("folder", folder);
+    }
 
     try {
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
 
       const data = await res.json();
 
       if (!res.ok) {
-        // Provide more specific error messages
-        if (data.error?.message) {
-          throw new Error(data.error.message);
-        }
-        if (res.status === 400) {
-          throw new Error(`Invalid request. Check if preset "${uploadPreset}" exists in your Cloudinary account.`);
-        }
-        if (res.status === 401) {
-          throw new Error("Cloudinary authentication failed. Check your cloud name.");
-        }
-        throw new Error(`Upload failed with status ${res.status}`);
+        throw new Error(data.error || `Upload failed with status ${res.status}`);
       }
 
-      if (!data.secure_url) {
+      if (!data.url) {
         throw new Error("Upload succeeded but no image URL was returned.");
       }
 
-      onUploadSuccess(data.secure_url);
+      onUploadSuccess(data.url);
     } catch (err) {
       if (err instanceof TypeError && err.message.includes("fetch")) {
         onUploadError(new Error("Network error. Please check your internet connection and try again."));

@@ -140,22 +140,45 @@ export function RichTextEditor({
     handleInput()
   }
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file || !file.type.startsWith("image/")) {
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const imageUrl = e.target?.result as string
-      insertImage(imageUrl)
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Image must be smaller than 10MB")
+      return
     }
-    reader.readAsDataURL(file)
-    
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
+
+    try {
+      // Upload image to storage
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("folder", "blog/content")
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Failed to upload image")
+      }
+
+      // Insert the uploaded image URL
+      insertImage(data.url)
+    } catch (error) {
+      console.error("Error uploading image:", error)
+      alert(error instanceof Error ? error.message : "Failed to upload image")
+    } finally {
+      // Reset input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
     }
   }
 

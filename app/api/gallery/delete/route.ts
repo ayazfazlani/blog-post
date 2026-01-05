@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { unlink } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
 import { connectToDatabase } from '@/lib/mongodb';
 import GalleryImage from '@/models/GalleryImage';
 import { revalidatePath } from 'next/cache';
+import { getStorageProvider } from '@/lib/storage';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -29,10 +27,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Delete file from disk
-    const filepath = path.join(process.cwd(), 'public', image.path);
-    if (existsSync(filepath)) {
-      await unlink(filepath);
+    // Get storage provider and delete file
+    const storage = getStorageProvider();
+    try {
+      await storage.delete(image.path);
+    } catch (deleteError) {
+      console.error('Error deleting file from storage:', deleteError);
+      // Continue with database deletion even if storage deletion fails
     }
 
     // Delete from database

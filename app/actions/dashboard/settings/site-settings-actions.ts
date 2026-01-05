@@ -2,18 +2,10 @@
 "use server";
 
 import { revalidatePath, revalidateTag } from "next/cache";
-import { v2 as cloudinary } from "cloudinary";
 import { connectToDatabase } from "@/lib/mongodb";
 import Post from "@/models/Post";
 import { promises as fs } from "fs";
 import path from "path";
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 // Helper function to write Firebase service worker to file
 async function writeFirebaseSWToFile(content: string) {
