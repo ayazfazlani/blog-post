@@ -276,7 +276,7 @@ export default function BlogListClient({
             className="overflow-hidden hover:shadow-lg transition-shadow"
           >
             <CardContent className="p-0">
-              <Link href={`/blog/${post.slug}`} prefetch={true} className="block">
+              <Link href={`/latest/${post.slug}`} prefetch={true} className="block">
                 {/* Featured Image */}
                 {post.featuredImage && (
                   <div className="relative w-full overflow-hidden bg-muted aspect-video">

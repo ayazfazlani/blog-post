@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // For login/register pages: if user is already logged in, redirect to dashboard
-  if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
+  if (pathname.startsWith('/admin-user-login') || pathname.startsWith('/register')) {
     const cookieToken = request.cookies.get('auth-token')?.value;
     if (cookieToken && JWT_SECRET) {
       try {
@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
     const token = cookieToken || headerToken;
 
     if (!token) {
-      const loginUrl = new URL('/login', request.url);
+      const loginUrl = new URL('/admin-user-login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
     }

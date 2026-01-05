@@ -1,5 +1,6 @@
 /**
- * Local file system storage provider implementation (stub for future use)
+ * Local file system storage provider implementation
+ * Stores files in the public/uploads directory
  */
 import { writeFile, unlink, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';

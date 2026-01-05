@@ -4,11 +4,34 @@ This application uses a flexible storage abstraction layer that allows you to sw
 
 ## Current Configuration
 
-By default, the application uses **Cloudinary** for image storage. You can switch providers by setting the `STORAGE_PROVIDER` environment variable.
+By default, the application uses **Local Storage** for image storage (files are stored in `public/uploads/`). You can switch providers by setting the `STORAGE_PROVIDER` environment variable.
 
 ## Supported Providers
 
-### 1. Cloudinary (Default)
+### 1. Local Storage (Default)
+
+**Configuration:**
+```env
+STORAGE_PROVIDER=local
+```
+
+**Features:**
+- No external services required
+- Files stored in `public/uploads/` directory
+- Works out of the box with zero configuration
+- Images accessible via `/uploads/...` URLs
+- Supports nested folders (e.g., `blog/content`)
+
+**Setup:**
+No setup required! Files are automatically stored in the `public/uploads/` directory. The directory is created automatically if it doesn't exist.
+
+**Important Notes:**
+- Files are stored directly on your server
+- For production, ensure your server has enough disk space
+- Consider using a CDN or external storage for high-traffic sites
+- The `public/uploads/` directory should be included in your git repository (or use `.gitignore` if you prefer)
+
+### 2. Cloudinary
 
 **Configuration:**
 ```env
@@ -32,7 +55,7 @@ NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=blog_featured
 3. Create an unsigned upload preset
 4. Add the environment variables above
 
-### 2. AWS S3 (Future)
+### 3. AWS S3 (Future)
 
 **Configuration:**
 ```env
@@ -45,14 +68,6 @@ AWS_S3_BUCKET=your_bucket_name
 
 **Status:** Stub implementation ready for future development
 
-### 3. Local Storage (Future)
-
-**Configuration:**
-```env
-STORAGE_PROVIDER=local
-```
-
-**Status:** Basic implementation available, stores files in `public/uploads/`
 
 ## How It Works
 
@@ -122,11 +137,11 @@ const imageUrl = data.url;
 
 ## Switching Providers
 
-To switch from Cloudinary to another provider:
+To switch from Local Storage to another provider:
 
 1. **Set the environment variable:**
    ```env
-   STORAGE_PROVIDER=s3  # or 'local'
+   STORAGE_PROVIDER=cloudinary  # or 's3'
    ```
 
 2. **Configure provider-specific credentials** (see above)
@@ -137,9 +152,9 @@ The application will automatically use the new provider for all uploads and dele
 
 ## Image URLs
 
+- **Local**: URLs are in the format `/uploads/...` (e.g., `/uploads/blog/1234567890-image.jpg`)
 - **Cloudinary**: URLs are in the format `https://res.cloudinary.com/...`
 - **S3**: URLs will be in the format `https://your-bucket.s3.region.amazonaws.com/...`
-- **Local**: URLs are in the format `/uploads/...`
 
 The storage provider automatically handles URL extraction and deletion based on the provider type.
 
@@ -186,17 +201,25 @@ export class MyProvider implements IStorageProvider {
 
 ## Troubleshooting
 
+### Local Storage Upload Fails
+
+- Check that the `public/uploads/` directory exists and is writable
+- Verify file permissions on the uploads directory
+- Check server disk space
+- Ensure the directory structure can be created (for nested folders)
+
+### Images Not Displaying
+
+- For local storage, verify files are in the `public/uploads/` directory
+- Check that URLs are being generated correctly (should start with `/uploads/`)
+- Verify the storage provider is correctly configured
+- In production, ensure static files are being served correctly
+
 ### Cloudinary Upload Fails
 
 - Check that all environment variables are set correctly
 - Verify your upload preset exists and is unsigned
 - Check Cloudinary dashboard for error logs
-
-### Images Not Displaying
-
-- Verify the storage provider is correctly configured
-- Check that URLs are being generated correctly
-- For local storage, ensure files are in the `public/uploads/` directory
 
 ### Switching Providers Doesn't Work
 

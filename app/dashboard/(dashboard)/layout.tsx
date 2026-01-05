@@ -38,7 +38,7 @@ export default function DashboardLayout({
       toast.success('Logged out successfully');
       
       // Redirect to login page
-      router.push('/login');
+      router.push('/admin-user-login');
       router.refresh();
     } catch (error) {
       toast.error('Failed to logout. Please try again.');

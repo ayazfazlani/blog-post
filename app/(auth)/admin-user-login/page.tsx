@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,15 +14,43 @@ function SignInForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [mathQuestion, setMathQuestion] = useState({ num1: 0, num2: 0, answer: 0 })
+  const [mathAnswer, setMathAnswer] = useState('')
+  const [mathError, setMathError] = useState('')
 
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
 
+  // Generate a random math question
+  const generateMathQuestion = () => {
+    const num1 = Math.floor(Math.random() * 10) + 1 // 1-10
+    const num2 = Math.floor(Math.random() * 10) + 1 // 1-10
+    const answer = num1 + num2
+    setMathQuestion({ num1, num2, answer })
+    setMathAnswer('')
+    setMathError('')
+  }
+
+  // Generate math question on component mount
+  useEffect(() => {
+    generateMathQuestion()
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setMathError('')
+
+    // Validate math answer
+    const userAnswer = parseInt(mathAnswer)
+    if (isNaN(userAnswer) || userAnswer !== mathQuestion.answer) {
+      setMathError('Incorrect answer. Please try again.')
+      generateMathQuestion() // Generate a new question
+      setLoading(false)
+      return
+    }
 
     const endpoint = isLogin ? '/api/login' : '/api/register'
     const body = isLogin 
@@ -82,6 +110,7 @@ function SignInForm() {
     } catch (err: any) {
       setError(err.message)
       setLoading(false)
+      generateMathQuestion() // Generate a new question on error
     }
   }
 
@@ -91,6 +120,7 @@ function SignInForm() {
     setName('')
     setEmail('')
     setPassword('')
+    generateMathQuestion() // Generate a new question when toggling
   }
 
   return (
@@ -140,6 +170,25 @@ function SignInForm() {
               />
             </div>
 
+            <div>
+              <Label htmlFor="mathAnswer">
+                Math Question: {mathQuestion.num1} + {mathQuestion.num2} = ?
+              </Label>
+              <Input
+                id="mathAnswer"
+                type="number"
+                value={mathAnswer}
+                onChange={(e) => {
+                  setMathAnswer(e.target.value)
+                  setMathError('')
+                }}
+                required
+                placeholder="Enter the answer"
+                className={mathError ? 'border-red-500' : ''}
+              />
+              {mathError && <p className="text-red-600 text-xs mt-1">{mathError}</p>}
+            </div>
+
             {error && <p className="text-red-600 text-center text-sm">{error}</p>}
 
             <Button type="submit" className="w-full" disabled={loading}>
@@ -147,11 +196,11 @@ function SignInForm() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
+          {/* <div className="mt-6 text-center text-sm">
             <button type="button" onClick={toggleMode} className="text-blue-600 hover:underline">
               {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Log in'}
             </button>
-          </div>
+          </div> */}
 
         </CardContent>
       </Card>

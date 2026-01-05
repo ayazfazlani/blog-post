@@ -18,7 +18,7 @@ export function getStorageProvider(): IStorageProvider {
     return storageInstance;
   }
 
-  const providerType = (process.env.STORAGE_PROVIDER || 'cloudinary') as StorageProviderType;
+  const providerType = (process.env.STORAGE_PROVIDER || 'local') as StorageProviderType;
 
   switch (providerType) {
     case 'cloudinary':
@@ -31,8 +31,8 @@ export function getStorageProvider(): IStorageProvider {
       storageInstance = new LocalStorageProvider();
       break;
     default:
-      console.warn(`Unknown storage provider: ${providerType}. Falling back to Cloudinary.`);
-      storageInstance = new CloudinaryProvider();
+      console.warn(`Unknown storage provider: ${providerType}. Falling back to Local storage.`);
+      storageInstance = new LocalStorageProvider();
   }
 
   return storageInstance;
