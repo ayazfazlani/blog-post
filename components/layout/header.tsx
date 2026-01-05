@@ -113,9 +113,9 @@ async function MobileNav({ categories }: { categories: { _id: string; name: stri
               </Link>
             ))}
           </div> */}
-          <Link href="/about" className="text-lg font-medium">
+          {/* <Link href="/about" className="text-lg font-medium">
             About
-          </Link>
+          </Link> */}
         </nav>
         {/* <ModeToggle /> */}
       </SheetContent>
