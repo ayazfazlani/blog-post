@@ -18,6 +18,8 @@ export type Comment = {
   updatedAt: Date | string;
 };
 
+type CommentWithReplies = Comment & { replies: CommentWithReplies[] };
+
 interface CommentsListProps {
   comments: Comment[];
   postId: string;
@@ -27,9 +29,9 @@ export function CommentsList({ comments, postId }: CommentsListProps) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   // Build a tree structure for nested comments
-  const buildCommentTree = (comments: Comment[]): Comment[] => {
-    const commentMap = new Map<string, Comment & { replies: Comment[] }>();
-    const rootComments: (Comment & { replies: Comment[] })[] = [];
+  const buildCommentTree = (comments: Comment[]): CommentWithReplies[] => {
+    const commentMap = new Map<string, CommentWithReplies>();
+    const rootComments: CommentWithReplies[] = [];
 
     // First pass: create map of all comments with empty replies array
     comments.forEach((comment) => {
@@ -52,7 +54,7 @@ export function CommentsList({ comments, postId }: CommentsListProps) {
 
   const commentTree = buildCommentTree(comments);
 
-  const CommentItem = ({ comment, depth = 0 }: { comment: Comment & { replies: Comment[] }; depth?: number }) => {
+  const CommentItem = ({ comment, depth = 0 }: { comment: CommentWithReplies; depth?: number }) => {
     const isReplying = replyingTo === comment.id;
     const maxDepth = 3; // Limit nesting depth
 

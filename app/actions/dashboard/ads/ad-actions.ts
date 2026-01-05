@@ -210,11 +210,14 @@ export async function createAd(data: any, userId?: string) {
     revalidatePath("/dashboard/ads");
     revalidateTag("ads");
 
+    // Ensure ad is a single document, not an array
+    const adDoc = Array.isArray(ad) ? ad[0] : ad;
+
     return {
       success: true,
       ad: {
-        id: ad._id.toString(),
-        name: ad.name,
+        id: adDoc._id.toString(),
+        name: adDoc.name,
       },
     };
   } catch (error: any) {

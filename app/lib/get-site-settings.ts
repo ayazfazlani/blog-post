@@ -43,6 +43,7 @@ export async function getSiteSettingsForLayout(): Promise<SiteSettings> {
         revisitDays: 1,
         author: "",
         customHeadScripts: "",
+        firebaseMessagingSW: "",
         faviconUrl: "",
         metaTitle: "",
         metaDescription: "",

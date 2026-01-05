@@ -53,14 +53,7 @@ export const commentSchema = z.object({
       z.string().email("Invalid email address"),
       z.literal(""),
     ])
-    .optional()
-    .transform((val) => {
-      // Transform empty string to undefined
-      if (val === "" || val === null || val === undefined) {
-        return undefined;
-      }
-      return val;
-    }),
+    .optional(),
   content: z.string().min(10, "Comment must be at least 10 characters").max(2000),
   parentId: z.string().optional().nullable(),
 });
