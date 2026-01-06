@@ -55,7 +55,10 @@ export async function updatePost(id: string, data: unknown) {
   // Update the post fields (this will trigger timestamps automatically)
   existingPost.title = validated.data.title;
   existingPost.slug = validated.data.slug;
-  existingPost.excerpt = validated.data.excerpt;
+  // Preserve existing excerpt if new excerpt is empty or undefined
+  existingPost.excerpt = (validated.data.excerpt && validated.data.excerpt.trim() !== "") 
+    ? validated.data.excerpt 
+    : existingPost.excerpt;
   existingPost.content = validated.data.content;
   existingPost.published = validated.data.published ?? false;
   existingPost.categoryId = validated.data.categoryId || null;

@@ -6,8 +6,10 @@ export const postSchema = z.object({
   slug: z.string().min(3, { message: "Slug must be at least 3 characters" }),
   content: z.any().optional(), // Or z.record(z.any()) for better type safety
   excerpt: z
-    .string()
-    .min(10, { message: "Excerpt must be at least 10 characters" })
+    .union([
+      z.string().min(10, { message: "Excerpt must be at least 10 characters" }),
+      z.literal(""), // Allow empty string, will be preserved as existing value in update
+    ])
     .optional(),
   categoryId: z.string().min(1, { message: "Please select a category" }),
   authorId: z.string().min(1, { message: "Please select an author" }),

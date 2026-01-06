@@ -63,7 +63,7 @@ export default function EditBlogForm({ post, users, categories }: Props) {
     defaultValues: {
       title: post.title || "",
       content: "",
-      excerpt: "",
+      excerpt: post.excerpt || "",
       slug: post.slug || "",
       authorId: post.authorId || "",
       categoryId: post.categoryId || "",
