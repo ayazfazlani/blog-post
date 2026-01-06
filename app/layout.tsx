@@ -72,7 +72,7 @@ export default async function RootLayout({
     <html lang={langCode} suppressHydrationWarning> 
       <body className="min-h-screen bg-background">
         <DynamicHead customScripts={settings.customHeadScripts} />
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           {children}
           <Toaster />
         </ThemeProvider>

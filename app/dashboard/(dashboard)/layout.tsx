@@ -139,7 +139,7 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between w-full min-w-0">
             <h2 className="text-lg font-semibold truncate">Dashboard</h2>
             <div className="flex items-center gap-2">
-              <ModeToggle />
+              {/* <ModeToggle /> */}
               <Button
                 variant="ghost"
                 size="sm"
