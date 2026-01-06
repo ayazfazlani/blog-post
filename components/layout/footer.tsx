@@ -12,7 +12,7 @@ import {
   Mail,
   Phone,
   MapPin,
-  Heart
+  Heart,
 } from 'lucide-react';
 
 async function FooterContent() {
@@ -129,13 +129,10 @@ async function FooterContent() {
                   <span>{settings.author}</span>
                 </li>
               )}
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>+1 (555) 123-4567</span>
-              </li>
+             
               <li className="flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 mt-0.5" />
-                <span>123 Main Street, City, State 12345</span>
+                <Mail className="h-4 w-4 mt-0.5" />
+                <span>jbms.com.pk@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -147,6 +144,9 @@ async function FooterContent() {
             <p className="text-sm text-muted-foreground text-center md:text-left">
               © {currentYear} {siteName}. All rights reserved.
             </p>
+            <Link href="/sitemap.xml" className="hover:text-foreground transition-colors">
+              <p className="text-sm text-muted-foreground">sitemap</p>
+            </Link>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Made with</span>
               <Heart className="h-4 w-4 text-red-500 fill-red-500" />
@@ -154,21 +154,7 @@ async function FooterContent() {
             </div>
           </div>
           
-          {/* Additional Links */}
-          <div className="flex flex-wrap justify-center gap-6 mt-4 text-sm text-muted-foreground">
-            <Link href="/privacy-policy" className="hover:text-foreground transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms-of-service" className="hover:text-foreground transition-colors">
-              Terms of Service
-            </Link>
-            <Link href="/about" className="hover:text-foreground transition-colors">
-              About
-            </Link>
-            <Link href="/sitemap.xml" className="hover:text-foreground transition-colors">
-              Sitemap
-            </Link>
-          </div>
+         
         </div>
       </div>
     </footer>

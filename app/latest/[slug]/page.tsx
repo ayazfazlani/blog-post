@@ -1,4 +1,4 @@
-// app/blog/[slug]/page.tsx
+// app/latest/[slug]/page.tsx
 import { connectToDatabase } from "@/lib/mongodb";
 import { notFound } from "next/navigation";
 import { Calendar, User as UserIcon} from "lucide-react";
@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   const title = post.title;
   const description = post.excerpt || '';
-  const canonicalUrl = await getCanonicalUrl(`/blog/${slug}`);
+  const canonicalUrl = await getCanonicalUrl(`/latest/${slug}`);
 
   return {
     title: title.length > 70 ? title.substring(0, 70) : title,
@@ -147,13 +147,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": `https://${siteSettings?.domain || 'example.com'}/blog/${post.slug}`
+      "@id": `https://${siteSettings?.domain || 'example.com'}/latest/${post.slug}`
     },
     "articleBody": post.content,
     // "keywords": post.keywords,
     "category": post.category,
     // "tags": post.tags,
-    "url": `https://${siteSettings?.domain || 'example.com'}/blog/${post.slug}`,
+    "url": `https://${siteSettings?.domain || 'example.com'}/latest/${post.slug}`,
     "wordCount": post.content.length,
     "readingTime": post.content.length / 200,
   }

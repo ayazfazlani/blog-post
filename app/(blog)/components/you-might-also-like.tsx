@@ -50,7 +50,7 @@ export default function YouMightAlsoLike({ posts, count }: YouMightAlsoLikeProps
           {displayPosts.map((post, index) => (
             <Link
               key={post.id}
-              href={`/blog/${post.slug}`}
+              href={`/latest/${post.slug}`}
               prefetch={true}
               className="block group hover:bg-background/50 rounded-md p-3 -m-3 transition-colors"
             >
