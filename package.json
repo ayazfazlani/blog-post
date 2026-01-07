@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node init && next dev",
     "init:app": "tsx scripts/init-app.ts",
     "setup:admin": "tsx scripts/setup-admin.ts",
     "seed:permissions": "tsx scripts/seed-permissions.ts",
     "seed:roles": "tsx scripts/seed-roles.ts",
     "seed:all": "tsx scripts/seed-permissions.ts && tsx scripts/seed-roles.ts",
     "submit:google": "tsx scripts/submit-posts-to-google.ts",
-    "build": "next build",
-    "start": "next start",
+    "build": "node init && next build",
+    "start": "node init && next start",
     "lint": "eslint"
   },
   "dependencies": {
