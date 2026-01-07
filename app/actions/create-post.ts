@@ -99,6 +99,12 @@ export async function updatePost(id: string, data: unknown) {
   revalidateTag("posts");
   revalidateTag("all-posts");
   
+  // Revalidate post-specific cache tag (for post page cache)
+  revalidateTag(`post-${id}`);
+  
+  // Revalidate comments cache for this post
+  revalidateTag("comments");
+  
   // Revalidate old category if it changed
   if (oldCategoryId && oldCategoryId !== validated.data.categoryId) {
     revalidateTag(`category-${oldCategoryId}`);
@@ -114,6 +120,7 @@ export async function updatePost(id: string, data: unknown) {
   const isNowPublished = validated.data.published;
   
   // Submit to Google if post is published (either was already published or just got published)
+  // Always submit for published posts to ensure Google knows about date/content updates
   if (wasPublished || isNowPublished) {
     const timestamp = toPSTTimestamp();
     
