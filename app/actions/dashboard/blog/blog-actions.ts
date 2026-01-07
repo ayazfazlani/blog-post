@@ -253,8 +253,13 @@ export async function bulkUpdatePostDates(postIds: string[]) {
     try {
       revalidateTag("posts");
       revalidateTag("all-posts");
+      revalidateTag("comments"); // Invalidate comments cache
       
-      // Invalidate category-specific tags
+      // Invalidate post-specific and category-specific tags
+      for (const id of postIds) {
+        revalidateTag(`post-${id}`);
+      }
+      
       for (const catId of categoryIds) {
         revalidateTag(`category-${catId}`);
       }
@@ -272,25 +277,36 @@ export async function bulkUpdatePostDates(postIds: string[]) {
       // Get the updated posts to submit their URLs
       try {
         const updatedPosts = await Post.find({ _id: { $in: objectIds } })
-          .select('slug published')
+          .select('_id slug published')
           .lean();
         
         const publishedPosts = updatedPosts.filter(p => p.published);
         console.log(`[${timestamp}] 📝 Submitting ${publishedPosts.length} published post(s) to Google`);
         
         // Submit URLs asynchronously (don't block the response)
-        Promise.all(
+        // Use Promise.allSettled to ensure all submissions are attempted even if some fail
+        Promise.allSettled(
           publishedPosts.map(async (post) => {
             try {
               const { getCanonicalUrl } = await import("@/lib/canonical-url");
               const postUrl = await getCanonicalUrl(`/latest/${post.slug}`);
-              await submitUrlToGoogle(postUrl, 'URL_UPDATED');
+              const success = await submitUrlToGoogle(postUrl, 'URL_UPDATED');
+              if (success) {
+                const successTimestamp = toPSTTimestamp();
+                console.log(`[${successTimestamp}] ✅ Successfully submitted ${post.slug} to Google`);
+              }
+              return success;
             } catch (error) {
               const errorTimestamp = toPSTTimestamp();
               console.error(`[${errorTimestamp}] ❌ Failed to submit ${post.slug} to Google:`, error);
+              return false;
             }
           })
-        ).catch(err => {
+        ).then(results => {
+          const successCount = results.filter(r => r.status === 'fulfilled' && r.value === true).length;
+          const finalTimestamp = toPSTTimestamp();
+          console.log(`[${finalTimestamp}] ✅ Google submission completed: ${successCount}/${publishedPosts.length} successful`);
+        }).catch(err => {
           const errorTimestamp = toPSTTimestamp();
           console.error(`[${errorTimestamp}] ❌ Error submitting updated posts to Google:`, err);
         });
