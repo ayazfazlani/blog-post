@@ -109,13 +109,15 @@ export async function updatePost(id: string, data: unknown) {
     revalidateTag(`category-${validated.data.categoryId}`);
   }
 
-  // Submit to Google Search Console if published
-  if (validated.data.published) {
+  // Submit to Google Search Console if published (either was published or is now published)
+  const wasPublished = existingPost.published;
+  const isNowPublished = validated.data.published;
+  
+  // Submit to Google if post is published (either was already published or just got published)
+  if (wasPublished || isNowPublished) {
     const timestamp = toPSTTimestamp();
-    const wasPublished = existingPost.published;
-    const isNowPublished = validated.data.published;
     
-    console.log(`[${timestamp}] 🔄 Post updated - checking Google Search Console update`);
+    console.log(`[${timestamp}] 🔄 Post updated - notifying Google Search Console`);
     console.log(`[${timestamp}] 📝 Post Title: ${validated.data.title}`);
     console.log(`[${timestamp}] 🔗 Post Slug: ${validated.data.slug}`);
     console.log(`[${timestamp}] 📊 Published Status: ${wasPublished} → ${isNowPublished}`);
@@ -123,7 +125,7 @@ export async function updatePost(id: string, data: unknown) {
     try {
       const { getCanonicalUrl } = await import("@/lib/canonical-url");
       const postUrl = await getCanonicalUrl(`/latest/${validated.data.slug}`);
-      // Submit asynchronously (don't wait for it)
+      // Submit asynchronously (don't wait for it) - always use URL_UPDATED for updates
       submitUrlToGoogle(postUrl, 'URL_UPDATED').catch(err => {
         const errorTimestamp = toPSTTimestamp();
         console.error(`[${errorTimestamp}] ❌ Failed to submit updated post to Google:`, err);
