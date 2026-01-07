@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from "@/lib/mongodb";
+import { toPSTISOString } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
@@ -34,7 +35,7 @@ export async function GET() {
       const lastmod = page.updatedAt || page.createdAt || new Date();
       return `  <url>
     <loc>${baseUrl}/${page.slug}</loc>
-    <lastmod>${new Date(lastmod).toISOString()}</lastmod>
+    <lastmod>${toPSTISOString(new Date(lastmod))}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>`;

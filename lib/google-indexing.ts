@@ -1,3 +1,5 @@
+import { toPSTTimestamp } from '@/lib/date-utils';
+
 /**
  * Google Search Console Indexing API Integration
  * Submits URLs to Google for instant indexing
@@ -38,7 +40,7 @@ interface GoogleIndexingResponse {
  * Get Google OAuth2 access token using service account
  */
 async function getGoogleAccessToken(): Promise<string> {
-  const timestamp = new Date().toISOString();
+  const timestamp = toPSTTimestamp();
   const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const GOOGLE_PRIVATE_KEY = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
   
@@ -90,13 +92,13 @@ async function getGoogleAccessToken(): Promise<string> {
 
   if (!response.ok) {
     const error = await response.text();
-    const errorTimestamp = new Date().toISOString();
+    const errorTimestamp = toPSTTimestamp();
     console.error(`[${errorTimestamp}] ❌ Failed to get Google access token:`, error);
     throw new Error(`Failed to get access token: ${error}`);
   }
 
   const data = await response.json();
-  const successTimestamp = new Date().toISOString();
+  const successTimestamp = toPSTTimestamp();
   console.log(`[${successTimestamp}] ✅ Google OAuth2 access token obtained successfully`);
   return data.access_token;
 }
@@ -107,7 +109,7 @@ async function getGoogleAccessToken(): Promise<string> {
  * @param type - 'URL_UPDATED' for new/updated content, 'URL_DELETED' for removed content
  */
 export async function submitUrlToGoogle(url: string, type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED'): Promise<boolean> {
-  const timestamp = new Date().toISOString();
+  const timestamp = toPSTTimestamp();
   const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   
   try {
@@ -164,7 +166,7 @@ export async function submitUrlToGoogle(url: string, type: 'URL_UPDATED' | 'URL_
     }
 
     const data: GoogleIndexingResponse = await response.json();
-    const successTimestamp = new Date().toISOString();
+    const successTimestamp = toPSTTimestamp();
     console.log(`[${successTimestamp}] ✅ URL successfully submitted to Google Search Console`);
     console.log(`[${successTimestamp}] 📧 Service Account: ${maskedEmail}`);
     console.log(`[${successTimestamp}] 🔗 URL: ${url}`);
@@ -172,7 +174,7 @@ export async function submitUrlToGoogle(url: string, type: 'URL_UPDATED' | 'URL_
     console.log(`[${successTimestamp}] 📊 Response:`, JSON.stringify(data, null, 2));
     return true;
   } catch (error: any) {
-    const errorTimestamp = new Date().toISOString();
+    const errorTimestamp = toPSTTimestamp();
     const maskedEmail = serviceAccountEmail 
       ? `${serviceAccountEmail.substring(0, 3)}***${serviceAccountEmail.substring(serviceAccountEmail.indexOf('@'))}`
       : 'Not configured';
@@ -189,7 +191,7 @@ export async function submitUrlToGoogle(url: string, type: 'URL_UPDATED' | 'URL_
  * Note: Google Indexing API has rate limits, so we process sequentially
  */
 export async function submitUrlsToGoogle(urls: string[], type: 'URL_UPDATED' | 'URL_DELETED' = 'URL_UPDATED'): Promise<number> {
-  const timestamp = new Date().toISOString();
+  const timestamp = toPSTTimestamp();
   console.log(`[${timestamp}] 📦 Starting bulk submission to Google Search Console`);
   console.log(`[${timestamp}] 📊 Total URLs to submit: ${urls.length}`);
   console.log(`[${timestamp}] 📝 Type: ${type}`);
@@ -205,12 +207,12 @@ export async function submitUrlsToGoogle(urls: string[], type: 'URL_UPDATED' | '
       // Add small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-      const errorTimestamp = new Date().toISOString();
+      const errorTimestamp = toPSTTimestamp();
       console.error(`[${errorTimestamp}] ❌ Failed to submit ${url}:`, error);
     }
   }
   
-  const finalTimestamp = new Date().toISOString();
+  const finalTimestamp = toPSTTimestamp();
   console.log(`[${finalTimestamp}] ✅ Bulk submission completed: ${successCount}/${urls.length} successful`);
   
   return successCount;

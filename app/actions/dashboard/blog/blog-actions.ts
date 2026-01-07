@@ -7,6 +7,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { postSchema } from "@/lib/validation";
 import mongoose from "mongoose";
 import { submitUrlToGoogle } from "@/lib/google-indexing";
+import { toPSTTimestamp } from "@/lib/date-utils";
 
 export async function createPost(data: any) {
   await connectToDatabase();
@@ -115,7 +116,7 @@ export async function deletePost(id: string) {
 
   // Notify Google if post was published
   if (wasPublished && slug) {
-    const timestamp = new Date().toISOString();
+    const timestamp = toPSTTimestamp();
     console.log(`[${timestamp}] 🗑️ Post deleted - notifying Google Search Console`);
     console.log(`[${timestamp}] 🔗 Post Slug: ${slug}`);
     try {
@@ -123,11 +124,11 @@ export async function deletePost(id: string) {
       const postUrl = await getCanonicalUrl(`/latest/${slug}`);
       // Submit deletion asynchronously
       submitUrlToGoogle(postUrl, 'URL_DELETED').catch(err => {
-        const errorTimestamp = new Date().toISOString();
+        const errorTimestamp = toPSTTimestamp();
         console.error(`[${errorTimestamp}] ❌ Failed to notify Google of post deletion:`, err);
       });
     } catch (error) {
-      const errorTimestamp = new Date().toISOString();
+      const errorTimestamp = toPSTTimestamp();
       console.error(`[${errorTimestamp}] ❌ Error generating URL for Google deletion notification:`, error);
     }
   }
@@ -160,7 +161,7 @@ export async function togglePublished(id: string, published: boolean) {
 
   // Submit to Google Search Console when published
   if (!published) { // post.published is now !published (toggled)
-    const timestamp = new Date().toISOString();
+    const timestamp = toPSTTimestamp();
     console.log(`[${timestamp}] 🚀 Post published via toggle - triggering Google Search Console update`);
     console.log(`[${timestamp}] 📝 Post Title: ${post.title}`);
     console.log(`[${timestamp}] 🔗 Post Slug: ${post.slug}`);
@@ -169,11 +170,11 @@ export async function togglePublished(id: string, published: boolean) {
       const postUrl = await getCanonicalUrl(`/latest/${post.slug}`);
       // Submit asynchronously (don't wait for it)
       submitUrlToGoogle(postUrl, 'URL_UPDATED').catch(err => {
-        const errorTimestamp = new Date().toISOString();
+        const errorTimestamp = toPSTTimestamp();
         console.error(`[${errorTimestamp}] ❌ Failed to submit post to Google:`, err);
       });
     } catch (error) {
-      const errorTimestamp = new Date().toISOString();
+      const errorTimestamp = toPSTTimestamp();
       console.error(`[${errorTimestamp}] ❌ Error generating URL for Google submission:`, error);
     }
   }
@@ -264,7 +265,7 @@ export async function bulkUpdatePostDates(postIds: string[]) {
     
     // Submit updated posts to Google Search Console (asynchronously, don't wait)
     if (result.modifiedCount > 0) {
-      const timestamp = new Date().toISOString();
+      const timestamp = toPSTTimestamp();
       console.log(`[${timestamp}] 🔄 Bulk post date update - triggering Google Search Console updates`);
       console.log(`[${timestamp}] 📊 Updated ${result.modifiedCount} post(s)`);
       
@@ -285,16 +286,16 @@ export async function bulkUpdatePostDates(postIds: string[]) {
               const postUrl = await getCanonicalUrl(`/latest/${post.slug}`);
               await submitUrlToGoogle(postUrl, 'URL_UPDATED');
             } catch (error) {
-              const errorTimestamp = new Date().toISOString();
+              const errorTimestamp = toPSTTimestamp();
               console.error(`[${errorTimestamp}] ❌ Failed to submit ${post.slug} to Google:`, error);
             }
           })
         ).catch(err => {
-          const errorTimestamp = new Date().toISOString();
+          const errorTimestamp = toPSTTimestamp();
           console.error(`[${errorTimestamp}] ❌ Error submitting updated posts to Google:`, err);
         });
       } catch (error) {
-        const errorTimestamp = new Date().toISOString();
+        const errorTimestamp = toPSTTimestamp();
         console.error(`[${errorTimestamp}] ❌ Error fetching updated posts for Google submission:`, error);
       }
     }

@@ -3,6 +3,7 @@ import { submitUrlsToGoogle } from '@/lib/google-indexing';
 import { connectToDatabase } from '@/lib/mongodb';
 import Post from '@/models/Post';
 import { getCanonicalUrl } from '@/lib/canonical-url';
+import { toPSTTimestamp } from '@/lib/date-utils';
 
 /**
  * Bulk submit published posts to Google Search Console
@@ -13,7 +14,7 @@ import { getCanonicalUrl } from '@/lib/canonical-url';
  * }
  */
 export async function POST(request: NextRequest) {
-  const timestamp = new Date().toISOString();
+  const timestamp = toPSTTimestamp();
   console.log(`[${timestamp}] 📥 Bulk Google indexing request received`);
   
   try {
@@ -107,12 +108,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Submit all URLs to Google (with rate limiting built-in)
-    const submissionTimestamp = new Date().toISOString();
+    const submissionTimestamp = toPSTTimestamp();
     console.log(`[${submissionTimestamp}] 🚀 Starting bulk submission of ${urls.length} URLs`);
     
     const successCount = await submitUrlsToGoogle(urls, 'URL_UPDATED');
     
-    const completionTimestamp = new Date().toISOString();
+    const completionTimestamp = toPSTTimestamp();
     console.log(`[${completionTimestamp}] ✅ Bulk submission completed: ${successCount}/${urls.length} successful`);
 
     return NextResponse.json({
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
  * GET /api/google-indexing/bulk?limit=100&updatedSince=2024-01-01
  */
 export async function GET(request: NextRequest) {
-  const timestamp = new Date().toISOString();
+  const timestamp = toPSTTimestamp();
   console.log(`[${timestamp}] 📥 Bulk Google indexing GET request received`);
   
   try {
@@ -219,12 +220,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const submissionTimestamp = new Date().toISOString();
+    const submissionTimestamp = toPSTTimestamp();
     console.log(`[${submissionTimestamp}] 🚀 Starting bulk submission of ${urls.length} URLs`);
     
     const successCount = await submitUrlsToGoogle(urls, 'URL_UPDATED');
     
-    const completionTimestamp = new Date().toISOString();
+    const completionTimestamp = toPSTTimestamp();
     console.log(`[${completionTimestamp}] ✅ Bulk submission completed: ${successCount}/${urls.length} successful`);
 
     return NextResponse.json({
